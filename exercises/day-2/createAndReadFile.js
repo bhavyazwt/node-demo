@@ -1,5 +1,5 @@
 const fs = require("fs");
-const createFileUtility = require("./utilityFunctions/createFile");
+const { createFileUtility } = require("./utilityFunctions/createFile");
 const fileName = process.argv[2];
 const fileText = process.argv[3];
 
@@ -23,5 +23,3 @@ try {
 } catch (err) {
   console.log(err);
 }
-
-module.exports.createFile = { createFile };
