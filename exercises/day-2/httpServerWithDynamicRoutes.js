@@ -6,13 +6,12 @@ const url = require("node:url");
 const fs = require("fs");
 
 // Custom Utility Functions
-const { listFiles } = require("./listFiles");
+// const { listFiles } = require("./listFiles");
 const { createFileUtility } = require("./utilityFunctions/createFile");
 const { appendFileUtility } = require("./utilityFunctions/appendFile");
 const filesPath = "./files";
 const host = "http://127.0.0.1:5050";
 
-console.log(host);
 function getSearchParams(req, requestedParam) {
   const testURL = new URL(`${host}${req.url}`);
   const paramValue = testURL.searchParams.get(requestedParam);
@@ -32,8 +31,7 @@ function errorResponse(req, res) {
 }
 
 function listAndSendFileNames(req, res, filesPath) {
-  console.log(filesPath);
-  const files = listFiles(filesPath);
+  const files = fs.readdirSync(filesPath);
   let responseBody = "";
   for (let file of files) responseBody += `${file}, `;
   res.write(responseBody);

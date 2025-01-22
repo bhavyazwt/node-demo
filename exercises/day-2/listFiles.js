@@ -15,4 +15,4 @@ function printFiles() {
 }
 
 printFiles();
-module.exports = { listFiles };
+// module.exports = { listFiles };
