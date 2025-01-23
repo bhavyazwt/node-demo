@@ -13,7 +13,9 @@ const filesPath = "./files";
 // const host = "http://127.0.0.1:5050";
 
 function getSearchParams(req, requestedParam) {
-  const testURL = new URL(`${req.headers.host}${req.url}`);
+  // console.log(`${req.headers.host}${req.url}`);
+  const testURL = new URL(`https://${req.headers.host}${req.url}`);
+  // console.log(testURL);
   const paramValue = testURL.searchParams.get(requestedParam);
 
   return paramValue;
@@ -31,16 +33,22 @@ function errorResponse(req, res) {
 }
 
 function listAndSendFileNames(req, res, filesPath) {
-  const files = fs.readdirSync(filesPath);
+  const files = fs
+    .readdirSync(filesPath, { withFileTypes: true })
+    .filter((file) => file.isFile());
   let responseBody = "";
-  for (let file of files) responseBody += `${file}, `;
+  if (files.length) {
+    for (let file of files) responseBody += `${file.name}, `;
+  } else {
+    responseBody += "No File Exists, Please Add A File.";
+  }
   res.write(responseBody);
   res.end();
 }
 
 function readFile(req, res) {
   const fileName = getSearchParams(req, "name");
-  console.log(fileName);
+  // console.log(fileName);
   if (fileName.endsWith(".txt")) {
     try {
       const fileContent = fs.readFileSync(
@@ -66,7 +74,11 @@ function readFile(req, res) {
 function createFile(req, res) {
   try {
     const fileName = getSearchParams(req, "name");
-    const filePointer = createFileUtility(fileName);
+    const overrideExistingFile = getSearchParams(req, "confirm");
+
+    // console.log(fileName);
+    const filePointer = createFileUtility(fileName, overrideExistingFile);
+    // console.log(filePointer);
     if (!filePointer) throw "Error Creating File";
     const fileContent = getSearchParams(req, "content");
     filePointer.write(fileContent);
@@ -86,7 +98,7 @@ function appendFile(req, res) {
 
     const isAppendSuccess = appendFileUtility(
       `./${fileName}`,
-      fileContent,
+      `\r\n${fileContent}`,
       newFileParam
     );
     if (isAppendSuccess) {
