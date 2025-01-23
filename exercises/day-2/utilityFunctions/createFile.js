@@ -1,8 +1,9 @@
 const fs = require("fs");
+const path = require("path");
 
 const charactersNotAllowed = /[!@#$%^&*()_+\-=\[\]{};':"\\|,<>\/?]+/;
 
-function createFileUtility(fileName) {
+function createFileUtility(fileName, confirm = "false") {
   try {
     const fileExtension = fileName.split(".").pop();
 
@@ -12,16 +13,15 @@ function createFileUtility(fileName) {
     } else if (charactersNotAllowed.test(fileName)) {
       throw "Special Characters Are Not Allowed In File Name";
     } else {
+      if (fs.existsSync(`./${fileName}`) && confirm !== "true") {
+        // console.log(confirm);
+        throw "File Already Exists, If You want to override use confirm=true param";
+      }
       console.log("Valid File Format, Now Creating The File.........");
       const writeStream = fs.createWriteStream(fileName);
       console.log(`File Created With Name ${fileName}`);
       return writeStream;
     }
-    // if (fileExist(fileName)) {
-    /* 
-        TODO: Prompt And Confirm That User Want To Override Existing File. 
-      */
-    // }
   } catch (err) {
     throw new Error(err);
   }
