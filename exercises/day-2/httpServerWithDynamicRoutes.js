@@ -10,10 +10,10 @@ const fs = require("fs");
 const { createFileUtility } = require("./utilityFunctions/createFile");
 const { appendFileUtility } = require("./utilityFunctions/appendFile");
 const filesPath = "./files";
-const host = "http://127.0.0.1:5050";
+// const host = "http://127.0.0.1:5050";
 
 function getSearchParams(req, requestedParam) {
-  const testURL = new URL(`${host}${req.url}`);
+  const testURL = new URL(`${req.headers.host}${req.url}`);
   const paramValue = testURL.searchParams.get(requestedParam);
 
   return paramValue;
