@@ -2,6 +2,7 @@ const { users, permittedUpdates } = require("../constants");
 const validateEmail = require("../validator/emailValidator");
 const ageValidator = require("../validator/ageValidator");
 const roleValidator = require("../validator/roleValidator");
+const path = require("path");
 
 async function home(req, res) {
   return res
@@ -141,6 +142,16 @@ async function deleteUser(req, res) {
 
   if (!userFound) return res.status(404).json({ message: "User Not Found" });
   else return res.status(200).json({ message: "User Deleted Successfully" });
+}
+
+async function fileController(req, res) {
+  const id = req.params.id;
+  const { profileImage } = req.file;
+  const index = findUserIndexById(id);
+  users[index].profileImage = "../tmp/uploads" + req.body.fileName;
+  return res
+    .status(200)
+    .json({ message: "File Upload Success", data: profileImage });
 }
 
 module.exports = {
