@@ -93,26 +93,30 @@ async function updateUser(req, res) {
   const changedValues = req?.body;
   const changedValuesKeys = Object.keys(changedValues);
 
-  //Validating only permitted updates
-  let isUpdateValid = true;
-  for (key of changedValuesKeys) {
-    if (!permittedUpdates.includes(key)) {
-      isUpdateValid = false;
-      break;
-    }
-  }
-  if (!isUpdateValid) {
-    res.status(401).json({ error: "Value Not Permitted to be Updated" });
+  if (!changedValues.length) {
+    res.status(403).json({ error: "No Valid Parameter Passed To Update" });
   } else {
-    const index = findUserIndexById(id);
-    if (index >= 0) {
-      users[index] = {
-        ...users[index],
-        ...changedValues,
-      };
-      res.status(200).json(users[index]);
+    //Validating only permitted updates
+    let isUpdateValid = true;
+    for (key of changedValuesKeys) {
+      if (!permittedUpdates.includes(key)) {
+        isUpdateValid = false;
+        break;
+      }
+    }
+    if (!isUpdateValid) {
+      res.status(401).json({ error: "Value Not Permitted to be Updated" });
     } else {
-      res.status(403).json({ error: "User Not Found" });
+      const index = findUserIndexById(id);
+      if (index >= 0) {
+        users[index] = {
+          ...users[index],
+          ...changedValues,
+        };
+        res.status(200).json(users[index]);
+      } else {
+        res.status(403).json({ error: "User Not Found" });
+      }
     }
   }
 }
