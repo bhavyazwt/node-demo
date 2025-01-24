@@ -4,7 +4,9 @@ const ageValidator = require("../validator/ageValidator");
 const roleValidator = require("../validator/roleValidator");
 
 async function home(req, res) {
-  res.status(200).json({ message: "Welcome to the User Management API!" });
+  return res
+    .status(200)
+    .json({ message: "Welcome to the User Management API!" });
 }
 
 async function getUsers(req, res) {
@@ -25,39 +27,41 @@ async function getUsers(req, res) {
     if (ageGt) {
       filteredUsers = filteredUsers?.filter((user) => String(user.age) > ageGt);
     }
-    res.status(200).json({ users: filteredUsers });
-  } else res.status(404).json({ message: "No Users Found" });
+    return res.status(200).json({ users: filteredUsers });
+  } else {
+    return res.status(404).json({ message: "No Users Found" });
+  }
 }
 
 async function getUsersById(req, res) {
   const id = req?.params?.id;
   const user = users.filter((user) => String(user.id) === id);
-  if (!user.length) res.status(404).json({ message: "User Not Found" });
-  else res.status(200).json(user);
+  if (!user.length) return res.status(404).json({ message: "User Not Found" });
+  else return res.status(200).json(user);
 }
 
 async function createUser(req, res) {
   const { name, email, age, role, isActive } = req?.body;
 
   if (!name || !email || !age || !role || !isActive) {
-    res.status(403).json({
+    return res.status(403).json({
       error:
         "Please Give All Fields To Create User: Name, Email, Age, Role, isActive",
     });
   } else if (!validateEmail(email)) {
-    res.status(403).json({
+    return res.status(403).json({
       error: "Please Enter Valid Email Address",
     });
   } else if (!ageValidator(age)) {
-    res.status(403).json({
+    return res.status(403).json({
       error: "Please Enter Valid Age",
     });
-  } else if (!roleValidator) {
-    res.status(403).json({
+  } else if (!roleValidator(role)) {
+    return res.status(403).json({
       error: "Please Enter Valid Role",
     });
   } else if (isActive !== true && isActive !== false) {
-    res.status(403).json({
+    return res.status(403).json({
       error: "Please Enter Valid Active Status",
     });
   } else {
@@ -71,7 +75,7 @@ async function createUser(req, res) {
       isActive: Boolean(isActive),
     };
     users.push(newUser);
-    res
+    return res
       .status(201)
       .json({ message: "User Created Successfully", body: newUser });
   }
@@ -94,7 +98,9 @@ async function updateUser(req, res) {
   const changedValuesKeys = Object.keys(changedValues);
 
   if (!changedValues.length) {
-    res.status(403).json({ error: "No Valid Parameter Passed To Update" });
+    return res
+      .status(403)
+      .json({ error: "No Valid Parameter Passed To Update" });
   } else {
     //Validating only permitted updates
     let isUpdateValid = true;
@@ -105,7 +111,9 @@ async function updateUser(req, res) {
       }
     }
     if (!isUpdateValid) {
-      res.status(401).json({ error: "Value Not Permitted to be Updated" });
+      return res
+        .status(401)
+        .json({ error: "Value Not Permitted to be Updated" });
     } else {
       const index = findUserIndexById(id);
       if (index >= 0) {
@@ -113,9 +121,9 @@ async function updateUser(req, res) {
           ...users[index],
           ...changedValues,
         };
-        res.status(200).json(users[index]);
+        return res.status(200).json(users[index]);
       } else {
-        res.status(403).json({ error: "User Not Found" });
+        return res.status(403).json({ error: "User Not Found" });
       }
     }
   }
@@ -131,8 +139,8 @@ async function deleteUser(req, res) {
     }
   });
 
-  if (!userFound) res.status(404).json({ message: "User Not Found" });
-  else res.status(200).json({ message: "User Deleted Successfully" });
+  if (!userFound) return res.status(404).json({ message: "User Not Found" });
+  else return res.status(200).json({ message: "User Deleted Successfully" });
 }
 
 module.exports = {
@@ -142,4 +150,5 @@ module.exports = {
   home,
   updateUser,
   deleteUser,
+  fileController,
 };
