@@ -23,6 +23,9 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const fileName = file.fieldname + "-" + uniqueSuffix + "." + extension;
     req.body.fileName = fileName;
+    req.body.extension = extension;
+    req.body.mimetype = file.mimetype;
+
     cb(null, fileName);
   },
 });
@@ -37,7 +40,17 @@ const upload = multer({
 function fileUpload(req, res, next) {
   upload(req, res, (err) => {
     if (err) {
-      return res.status(403).json({ error: err });
+      if (err.code === "LIMIT_FILE_SIZE")
+        return res.status(403).json({
+          error: "File Size is too large. Please Upload Less Than 2MB of File.",
+        });
+      else if (err.code === "LIMIT_UNEXPECTED_FILE")
+        return res.status(403).json({
+          error: "Only Single File is allowed. Upload only one file.",
+        });
+      else {
+        return res.status(403).json({ error: err });
+      }
     }
     next();
   });
