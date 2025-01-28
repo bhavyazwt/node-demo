@@ -2,10 +2,10 @@ const { users, permittedUpdates } = require("../constants");
 const validateEmail = require("../validator/emailValidator");
 const ageValidator = require("../validator/ageValidator");
 const roleValidator = require("../validator/roleValidator");
-const { connectDB } = require("../config/db");
+const { getConnection } = require("../db/db");
 
 async function createInitialTables() {
-  const connection = await connectDB("users");
+  const connection = await getConnection();
   try {
     // Create user table
     await connection.query(
@@ -51,7 +51,7 @@ async function home(req, res) {
 
 async function getUsers(req, res) {
   try {
-    const connection = await connectDB("users");
+    const connection = await getConnection();
     const role = req?.query?.role;
     const isActive = req?.query?.isActive;
     const ageGt = req?.query?.ageGt;
@@ -98,8 +98,9 @@ async function getUsers(req, res) {
 
 async function getUsersById(req, res) {
   const id = req?.params?.id;
+  console.log(id);
   try {
-    const connection = await connectDB("users");
+    const connection = await getConnection();
     const [user] = await connection.query(
       "SELECT * FROM users WHERE id = ?",
       id
@@ -112,7 +113,7 @@ async function getUsersById(req, res) {
         .status(200)
         .json({ message: `User with ID ${id} found`, data: user[0] });
   } catch (err) {
-    return res.status(500).json({ error: err.sqlMessage });
+    return res.status(500).json({ error: err });
   }
 }
 
@@ -142,7 +143,7 @@ async function createUser(req, res) {
         error: "Please Enter Valid Active Status",
       });
     } else {
-      const connection = await connectDB("users");
+      const connection = await getConnection();
       const [user] = await connection.query(
         "INSERT INTO users (name,email,age,role,isActive) VALUES (?,?,?,?,?);",
         [name, email, age, role, isActive]
@@ -201,7 +202,7 @@ async function updateUser(req, res) {
         .status(401)
         .json({ error: "Value Not Permitted to be Updated" });
     } else {
-      const connection = await connectDB("users");
+      const connection = await getConnection();
       const updateQuery = buildPatchQuery("users", id, changedValues);
       await connection.query(updateQuery);
       const [updatedUser] = await connection.query(
@@ -216,7 +217,7 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
   const id = req?.params?.id;
-  const connection = await connectDB("users");
+  const connection = await getConnection();
   const [{ affectedRows }] = await connection.query(
     "DELETE FROM users WHERE id = ?",
     id
@@ -234,7 +235,7 @@ async function fileController(req, res) {
   const size = req.file.size;
 
   const imageUploadQuery = `INSERT INTO user_images (userId,imageName,path,mimeType,extension,size) VALUES (?,?,?,?,?,?)`;
-  const connection = await connectDB("users");
+  const connection = await getConnection();
   const [{ affectedRows }] = await connection.query(imageUploadQuery, [
     id,
     fileName,

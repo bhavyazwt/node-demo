@@ -1,10 +1,10 @@
 // const { users } = require("../constants");
-const { connectDB } = require("../config/db");
+const { getConnection } = require("../db/db");
 
 async function idValidator(req, res, next) {
   const id = req?.params?.id;
   try {
-    const connection = await connectDB("users");
+    const connection = await getConnection();
     const [user] = await connection.query(
       "SELECT * FROM users WHERE id = ?",
       id
