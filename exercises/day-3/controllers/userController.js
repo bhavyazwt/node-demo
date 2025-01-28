@@ -4,7 +4,7 @@ const ageValidator = require("../validator/ageValidator");
 const roleValidator = require("../validator/roleValidator");
 const { connectDB } = require("../config/db");
 
-async function createUsersTable() {
+async function createInitialTables() {
   const connection = await connectDB("users");
   try {
     // Create user table
@@ -20,6 +20,21 @@ async function createUsersTable() {
       updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE now(),
       primary key(id));`
     );
+
+    await connection.query(
+      `create table user_images(
+      id int NOT NULL AUTO_INCREMENT, 
+      userId int,
+      imageName varchar(255),
+      path varchar(255),
+      mimeType varchar(100),
+      extension varchar(100),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE now(),
+      primary key(id),
+      foreign key (userId) references users(id));`
+    );
+
     console.log("User Table Created!");
     return 1;
   } catch (err) {
@@ -37,28 +52,47 @@ async function home(req, res) {
 async function getUsers(req, res) {
   try {
     const connection = await connectDB("users");
-    // const role = req?.query?.role;
-    // const isActive = req?.query?.isActive;
-    // const ageGt = req?.query?.ageGt;
-    // const getUsersQuery = "SELECT * FROM USERS";
-    // if (role) {
-    //   filteredUsers = filteredUsers?.filter((user) => user.role === role);
-    // }
-    // if (isActive) {
-    //   filteredUsers = filteredUsers?.filter(
-    //     (user) => String(user.isActive) === isActive
-    //   );
-    // }
-    // if (ageGt) {
-    //   filteredUsers = filteredUsers?.filter((user) => String(user.age) > ageGt);
-    // }
-    const users = await connection.query("SELECT * FROM USERS");
+    const role = req?.query?.role;
+    const isActive = req?.query?.isActive;
+    const ageGt = req?.query?.ageGt;
+    let filters = "";
+    if (role) {
+      filters += ` where role = '${role}'`;
+    }
+    if (isActive) {
+      if (filters) filters += `, isActive = '${isActive}'`;
+      else filters += ` where isActive = '${isActive}'`;
+    }
+    if (ageGt) {
+      if (filters) filters += `, age > '${ageGt}'`;
+      else filters += ` where age > '${ageGt}'`;
+    }
 
-    res
+    const [users] = await connection.query(
+      `SELECT 
+      users.id,
+      users.name,
+      users.email,
+      users.age,
+      users.role,
+      users.isActive, 
+      user_images.imageName,
+      user_images.path,
+      user_images.mimeType,
+      user_images.extension,
+      user_images.size
+      FROM USERS
+      LEFT JOIN user_images ON users.id = user_images.userId` + filters
+    );
+
+    if (!users.length) {
+      return res.status(404).json({ error: "No Users Found" });
+    }
+    return res
       .status(200)
-      .json({ message: "Users Fetched Successfully", data: users[0] });
+      .json({ message: "Users Fetched Successfully", data: users });
   } catch (err) {
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: err });
   }
 }
 
@@ -228,4 +262,5 @@ module.exports = {
   updateUser,
   deleteUser,
   fileController,
+  createInitialTables,
 };
