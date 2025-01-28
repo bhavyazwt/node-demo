@@ -4,45 +4,6 @@ const ageValidator = require("../validator/ageValidator");
 const roleValidator = require("../validator/roleValidator");
 const { getConnection } = require("../db/db");
 
-async function createInitialTables() {
-  const connection = await getConnection();
-  try {
-    // Create user table
-    await connection.query(
-      `create table users(
-      id int NOT NULL AUTO_INCREMENT,
-      name varchar(255),
-      email varchar(255),
-      age int,
-      role varchar(30),
-      isActive BOOL,
-      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE now(),
-      primary key(id));`
-    );
-
-    await connection.query(
-      `create table user_images(
-      id int NOT NULL AUTO_INCREMENT, 
-      userId int,
-      imageName varchar(255),
-      path varchar(255),
-      mimeType varchar(100),
-      extension varchar(100),
-      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMP NOT NULL DEFAULT NOW() ON UPDATE now(),
-      primary key(id),
-      foreign key (userId) references users(id));`
-    );
-
-    console.log("User Table Created!");
-    return 1;
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Error Connecting DB" });
-  }
-}
-
 async function home(req, res) {
   return res
     .status(200)
@@ -80,9 +41,15 @@ async function getUsers(req, res) {
       user_images.path,
       user_images.mimeType,
       user_images.extension,
-      user_images.size
+      user_images.size,
+      user_profiles.bio,
+      user_profiles.linkedInUrl,
+      user_profiles.facebookUrl,
+      user_profiles.instaUrl
       FROM USERS
-      LEFT JOIN user_images ON users.id = user_images.userId` + filters
+      LEFT JOIN user_images ON users.id = user_images.userId
+      LEFT JOIN user_profiles ON users.id = user_profiles.userId
+      ` + filters
     );
 
     if (!users.length) {
@@ -120,44 +87,20 @@ async function getUsersById(req, res) {
 async function createUser(req, res) {
   try {
     const { name, email, age, role, isActive } = req?.body;
-
-    if (!name || !email || !age || !role || !isActive) {
-      return res.status(403).json({
-        error:
-          "Please Give All Fields To Create User: Name, Email, Age, Role, isActive",
-      });
-    } else if (!validateEmail(email)) {
-      return res.status(403).json({
-        error: "Please Enter Valid Email Address",
-      });
-    } else if (!ageValidator(age)) {
-      return res.status(403).json({
-        error: "Please Enter Valid Age",
-      });
-    } else if (!roleValidator(role)) {
-      return res.status(403).json({
-        error: "Please Enter Valid Role",
-      });
-    } else if (isActive !== true && isActive !== false) {
-      return res.status(403).json({
-        error: "Please Enter Valid Active Status",
-      });
-    } else {
-      const connection = await getConnection();
-      const [user] = await connection.query(
-        "INSERT INTO users (name,email,age,role,isActive) VALUES (?,?,?,?,?);",
-        [name, email, age, role, isActive]
+    const connection = await getConnection();
+    const [user] = await connection.query(
+      "INSERT INTO users (name,email,age,role,isActive) VALUES (?,?,?,?,?);",
+      [name, email, age, role, isActive]
+    );
+    if (user) {
+      const { insertId } = user;
+      console.log(insertId);
+      const [insertedUser] = await connection.query(
+        `SELECT * FROM users WHERE id = ${insertId}`
       );
-      if (user) {
-        const { insertId } = user;
-        console.log(insertId);
-        const [insertedUser] = await connection.query(
-          `SELECT * FROM users WHERE id = ${insertId}`
-        );
-        res
-          .status(201)
-          .json({ message: "User Inserted Successfully", data: insertedUser });
-      }
+      res
+        .status(201)
+        .json({ message: "User Inserted Successfully", data: insertedUser });
     }
   } catch (err) {
     return res.status(500).json({ error: err.sqlMessage });
@@ -181,9 +124,6 @@ async function updateUser(req, res) {
   const changedValues = req?.body;
   const changedValuesKeys = Object.keys(changedValues);
 
-  /*
-    TODO: EMAIL AND OTHER FIELD VALIDATIONS
-  */
   if (!changedValuesKeys.length) {
     return res
       .status(403)
@@ -255,6 +195,98 @@ async function fileController(req, res) {
   }
 }
 
+async function createProfile(req, res) {
+  const id = req.params.id;
+  const { bio, linkedInUrl, facebookUrl, instaUrl } = req.body;
+  const connection = await getConnection();
+  const createProfileQuery = `INSERT INTO user_profiles(userId,bio,linkedInUrl,facebookUrl,instaUrl) VALUES (?,?,?,?,?)`;
+  const [userProfile] = await connection.query(createProfileQuery, [
+    id,
+    bio,
+    linkedInUrl,
+    facebookUrl,
+    instaUrl,
+  ]);
+
+  if (userProfile) {
+    const { insertId } = userProfile;
+    console.log(insertId);
+    const [insertedUser] = await connection.query(
+      `SELECT * FROM user_profiles WHERE id = ${insertId}`
+    );
+    res
+      .status(201)
+      .json({ message: "User Inserted Successfully", data: insertedUser });
+  }
+}
+
+async function getUserProfilesById(req, res) {
+  const id = req?.params?.id;
+  console.log(id);
+  try {
+    const connection = await getConnection();
+    const [user] = await connection.query(
+      "SELECT * FROM user_profiles WHERE id = ?",
+      id
+    );
+    console.log(user);
+    if (!user.length)
+      return res.status(404).json({ message: "User Not Found" });
+    else
+      res
+        .status(200)
+        .json({ message: `User with ID ${id} found`, data: user[0] });
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
+}
+
+async function updateUserProfile(req, res) {
+  const id = req?.params?.id;
+  const { bio, linkedInUrl, facebookUrl, instaUrl } = req?.body;
+  const updateQuery = `
+  UPDATE user_profiles
+  SET 
+  bio = ?,
+  linkedInUrl = ?,
+  facebookUrl = ?,
+  instaUrl = ?
+  WHERE 
+  id = ?
+  `;
+  /*
+    TODO:  VALIDATIONS
+  */
+
+  const connection = await getConnection();
+  await connection.query(updateQuery, [
+    bio,
+    linkedInUrl,
+    facebookUrl,
+    instaUrl,
+    id,
+  ]);
+  const [updatedUser] = await connection.query(
+    `SELECT * FROM user_profiles WHERE id = ${id}`
+  );
+  return res
+    .status(201)
+    .json({ message: "User Updated Successfully", data: updatedUser });
+}
+
+async function deleteUserImage(req, res) {
+  const userId = req?.params?.userId;
+  const connection = await getConnection();
+  const [{ affectedRows }] = await connection.query(
+    "DELETE FROM user_images WHERE userId = ?",
+    userId
+  );
+
+  if (!affectedRows)
+    return res.status(404).json({ message: "No Images Found" });
+  else return res.status(200).json({ message: "Image Deleted Successfully" });
+}
+
 module.exports = {
   getUsers,
   getUsersById,
@@ -263,5 +295,8 @@ module.exports = {
   updateUser,
   deleteUser,
   fileController,
-  createInitialTables,
+  createProfile,
+  getUserProfilesById,
+  updateUserProfile,
+  deleteUserImage,
 };

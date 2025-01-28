@@ -4,8 +4,10 @@
   "main": "script.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "migrate": "node exercises/day-3/db/migrationsRunner",
-    "day3": "node ./exercises/day-3/index.js"
+    "migrate3": "node exercises/day-3/db/migrationsRunner",
+    "migrate5": "node exercises/day-5/db/migrationsRunner",
+    "day3": "node ./exercises/day-3/index.js",
+    "day5": "node ./exercises/day-5/index.js"
   },
   "author": "",
   "license": "ISC",

@@ -18,7 +18,6 @@ router.get("/users/:id", idValidator, userController.getUsersById);
 // User POST Routes
 router.post("/users", userController.createUser);
 router.post("/:id/upload-image", fileUpload, userController.fileController);
-
 // User PATCH Routes
 router.patch("/users/:id", idValidator, userController.updateUser);
 
