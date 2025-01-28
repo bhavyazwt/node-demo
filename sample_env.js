@@ -7,3 +7,4 @@ PORT = 5050;
 MYSQL_HOST = localhost;
 MYSQL_USERNAME = root;
 MYSQL_PASSWORD = xyz;
+MYSQL_DBNAME = users;
