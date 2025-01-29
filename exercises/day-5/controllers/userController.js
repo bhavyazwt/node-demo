@@ -1,8 +1,5 @@
-const { users, permittedUpdates } = require("../../../constants");
-const validateEmail = require("../validator/emailValidator");
-const ageValidator = require("../validator/ageValidator");
-const roleValidator = require("../validator/roleValidator");
-const { getConnection } = require("../db/db");
+const { permittedUpdates } = require("../../../constants");
+const { pool } = require("../db/db");
 
 async function home(req, res) {
   return res
@@ -12,7 +9,6 @@ async function home(req, res) {
 
 async function getUsers(req, res) {
   try {
-    const connection = await getConnection();
     const role = req?.query?.role;
     const isActive = req?.query?.isActive;
     const ageGt = req?.query?.ageGt;
@@ -28,28 +24,27 @@ async function getUsers(req, res) {
       if (filters) filters += `, age > '${ageGt}'`;
       else filters += ` where age > '${ageGt}'`;
     }
-
-    const [users] = await connection.query(
+    const [users] = await pool.query(
       `SELECT 
-      users.id,
-      users.name,
-      users.email,
-      users.age,
-      users.role,
-      users.isActive, 
-      user_images.imageName,
-      user_images.path,
-      user_images.mimeType,
-      user_images.extension,
-      user_images.size,
-      user_profiles.bio,
-      user_profiles.linkedInUrl,
-      user_profiles.facebookUrl,
-      user_profiles.instaUrl
-      FROM USERS
-      LEFT JOIN user_images ON users.id = user_images.userId
-      LEFT JOIN user_profiles ON users.id = user_profiles.userId
-      ` + filters
+        users.id,
+        users.name,
+        users.email,
+        users.age,
+        users.role,
+        users.isActive, 
+        user_images.imageName,
+        user_images.path,
+        user_images.mimeType,
+        user_images.extension,
+        user_images.size,
+        user_profiles.bio,
+        user_profiles.linkedInUrl,
+        user_profiles.facebookUrl,
+        user_profiles.instaUrl
+        FROM USERS
+        LEFT JOIN user_images ON users.id = user_images.userId
+        LEFT JOIN user_profiles ON users.id = user_profiles.userId
+        ` + filters
     );
 
     if (!users.length) {
@@ -67,11 +62,7 @@ async function getUsersById(req, res) {
   const id = req?.params?.id;
   console.log(id);
   try {
-    const connection = await getConnection();
-    const [user] = await connection.query(
-      "SELECT * FROM users WHERE id = ?",
-      id
-    );
+    const [user] = await pool.query("SELECT * FROM users WHERE id = ?", id);
     console.log(user);
     if (!user.length)
       return res.status(404).json({ message: "User Not Found" });
@@ -87,15 +78,14 @@ async function getUsersById(req, res) {
 async function createUser(req, res) {
   try {
     const { name, email, age, role, isActive } = req?.body;
-    const connection = await getConnection();
-    const [user] = await connection.query(
+    const [user] = await pool.query(
       "INSERT INTO users (name,email,age,role,isActive) VALUES (?,?,?,?,?);",
       [name, email, age, role, isActive]
     );
     if (user) {
       const { insertId } = user;
       console.log(insertId);
-      const [insertedUser] = await connection.query(
+      const [insertedUser] = await pool.query(
         `SELECT * FROM users WHERE id = ${insertId}`
       );
       res
@@ -110,11 +100,13 @@ async function createUser(req, res) {
 const buildPatchQuery = (table, id, data) => {
   if (Object.keys(data).length === 0) return null;
   let sql = `UPDATE ${table} SET`;
-  Object.entries(data).forEach(([key, value]) => {
+  Object.entries(data).forEach(([key, value], index) => {
     const valueToSet = typeof data[key] === "string" ? `'${value}'` : value;
-    sql += ` ${key}=${valueToSet},`;
+    sql +=
+      Object.keys(data).length - 1 === index
+        ? ` ${key}=${valueToSet}`
+        : ` ${key}=${valueToSet},`;
   });
-  sql = sql.slice(0, -1); // Remove last ","
   sql += ` WHERE id=${id};`;
   return sql;
 };
@@ -142,10 +134,9 @@ async function updateUser(req, res) {
         .status(401)
         .json({ error: "Value Not Permitted to be Updated" });
     } else {
-      const connection = await getConnection();
       const updateQuery = buildPatchQuery("users", id, changedValues);
-      await connection.query(updateQuery);
-      const [updatedUser] = await connection.query(
+      await pool.query(updateQuery);
+      const [updatedUser] = await pool.query(
         `SELECT * FROM users WHERE id = ${id}`
       );
       return res
@@ -157,8 +148,7 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
   const id = req?.params?.id;
-  const connection = await getConnection();
-  const [{ affectedRows }] = await connection.query(
+  const [{ affectedRows }] = await pool.query(
     "DELETE FROM users WHERE id = ?",
     id
   );
@@ -175,8 +165,7 @@ async function fileController(req, res) {
   const size = req.file.size;
 
   const imageUploadQuery = `INSERT INTO user_images (userId,imageName,path,mimeType,extension,size) VALUES (?,?,?,?,?,?)`;
-  const connection = await getConnection();
-  const [{ affectedRows }] = await connection.query(imageUploadQuery, [
+  const [{ affectedRows }] = await pool.query(imageUploadQuery, [
     id,
     fileName,
     path,
@@ -198,9 +187,8 @@ async function fileController(req, res) {
 async function createProfile(req, res) {
   const id = req.params.id;
   const { bio, linkedInUrl, facebookUrl, instaUrl } = req.body;
-  const connection = await getConnection();
   const createProfileQuery = `INSERT INTO user_profiles(userId,bio,linkedInUrl,facebookUrl,instaUrl) VALUES (?,?,?,?,?)`;
-  const [userProfile] = await connection.query(createProfileQuery, [
+  const [userProfile] = await pool.query(createProfileQuery, [
     id,
     bio,
     linkedInUrl,
@@ -211,7 +199,7 @@ async function createProfile(req, res) {
   if (userProfile) {
     const { insertId } = userProfile;
     console.log(insertId);
-    const [insertedUser] = await connection.query(
+    const [insertedUser] = await pool.query(
       `SELECT * FROM user_profiles WHERE id = ${insertId}`
     );
     res
@@ -224,12 +212,10 @@ async function getUserProfilesById(req, res) {
   const id = req?.params?.id;
   console.log(id);
   try {
-    const connection = await getConnection();
-    const [user] = await connection.query(
-      "SELECT * FROM user_profiles WHERE id = ?",
+    const [user] = await pool.query(
+      `SELECT * FROM user_profiles WHERE id = ?`,
       id
     );
-    console.log(user);
     if (!user.length)
       return res.status(404).json({ message: "User Not Found" });
     else
@@ -254,19 +240,9 @@ async function updateUserProfile(req, res) {
   WHERE 
   id = ?
   `;
-  /*
-    TODO:  VALIDATIONS
-  */
 
-  const connection = await getConnection();
-  await connection.query(updateQuery, [
-    bio,
-    linkedInUrl,
-    facebookUrl,
-    instaUrl,
-    id,
-  ]);
-  const [updatedUser] = await connection.query(
+  await pool.query(updateQuery, [bio, linkedInUrl, facebookUrl, instaUrl, id]);
+  const [updatedUser] = await pool.query(
     `SELECT * FROM user_profiles WHERE id = ${id}`
   );
   return res
@@ -276,8 +252,7 @@ async function updateUserProfile(req, res) {
 
 async function deleteUserImage(req, res) {
   const userId = req?.params?.userId;
-  const connection = await getConnection();
-  const [{ affectedRows }] = await connection.query(
+  const [{ affectedRows }] = await pool.query(
     "DELETE FROM user_images WHERE userId = ?",
     userId
   );
