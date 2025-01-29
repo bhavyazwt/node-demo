@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-
+const { pool } = require("../db/db");
 async function runMigrations() {
   try {
     console.log("Running migrations...");
