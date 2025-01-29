@@ -1,6 +1,6 @@
 const { permittedUpdates } = require("../../../constants");
 const { pool } = require("../db/db");
-
+const path = require("path");
 async function home(req, res) {
   return res
     .status(200)
@@ -262,6 +262,30 @@ async function deleteUserImage(req, res) {
   else return res.status(200).json({ message: "Image Deleted Successfully" });
 }
 
+async function createUserData(req, res) {
+  try {
+    const { name, email, age, role, isActive, fileName } = req?.body;
+    const pdfPath = path.join(__dirname, "../tmp/uploads/pdf", fileName);
+
+    const [user] = await pool.query(
+      "INSERT INTO users_data (name,email,age,role,isActive,pdf) VALUES (?,?,?,?,?,?);",
+      [name, email, age, role, isActive, pdfPath]
+    );
+    if (user) {
+      const { insertId } = user;
+      console.log(insertId);
+      const [insertedUser] = await pool.query(
+        `SELECT * FROM users_data WHERE id = ${insertId}`
+      );
+      res
+        .status(201)
+        .json({ message: "User Inserted Successfully", data: insertedUser });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err.sqlMessage });
+  }
+}
+
 module.exports = {
   getUsers,
   getUsersById,
@@ -274,4 +298,5 @@ module.exports = {
   getUserProfilesById,
   updateUserProfile,
   deleteUserImage,
+  createUserData,
 };

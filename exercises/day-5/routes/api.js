@@ -8,8 +8,8 @@ const fileUpload = require("../utility/imageUpload");
 const router = express.Router();
 
 //Controllers
+// const userController = require("../controllers/userController");
 const userController = require("../controllers/userController");
-
 //Validators
 const idValidator = require("../middlewares/idValidator");
 const { validate } = require("../validator/validator");
@@ -19,6 +19,7 @@ const createUserSchema = require("../schemas/createUserSchema");
 const updateUserSchema = require("../schemas/updateUserSchema");
 const userProfileSchema = require("../schemas/userProfileSchema");
 const getUserSchema = require("../schemas/getUserSchema");
+const pdfUpload = require("../utility/pdfUpload");
 
 // User GET ROUTES
 router.get("/", userController.home);
@@ -63,5 +64,8 @@ router.put(
   idValidator,
   userController.updateUserProfile
 );
+
+//User data using FORM Data
+router.post("/user-data", pdfUpload, userController.createUserData);
 
 module.exports = router;

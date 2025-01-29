@@ -25,7 +25,6 @@ async function runMigrations() {
 }
 
 if (require.main === module) {
-  initializeDB();
   runMigrations()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
