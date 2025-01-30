@@ -2,13 +2,12 @@ const express = require("express");
 const path = require("path");
 
 //For File Uploads
-const { fileUpload } = require("../utility/imageUpload-1");
+const { fileUpload } = require("../utility/imageUpload");
 
 //Router
 const router = express.Router();
 
 //Controllers
-// const userController = require("../controllers/userController");
 const userController = require("../controllers/userController");
 //Validators
 const idValidator = require("../middlewares/idValidator");
@@ -24,14 +23,24 @@ const pdfUpload = require("../utility/pdfUpload");
 // User GET ROUTES
 router.get("/", userController.home);
 router.get("/users", validate(getUserSchema), userController.getUsers);
-router.get("/users/:id", userController.getUsersById);
-router.get("/user-profile/:id", userController.getUserProfilesById);
+router.get("/users/:id", idValidator, userController.getUsersById);
+router.get(
+  "/user-profile/:id",
+  idValidator,
+  userController.getUserProfilesById
+);
 
 // User POST Routes
 router.post("/users", validate(createUserSchema), userController.createUser);
-router.post("/:id/upload-image", fileUpload, userController.fileController);
+router.post(
+  "/:id/upload-image",
+  idValidator,
+  fileUpload,
+  userController.fileController
+);
 router.post(
   "/:id/user-profile",
+  idValidator,
   validate(userProfileSchema),
   userController.createProfile
 );
@@ -39,22 +48,28 @@ router.post(
 // User PATCH Routes
 router.patch(
   "/users/:id",
+  idValidator,
   validate(updateUserSchema),
   userController.updateUser
 );
 
 // User DELETE Routes
-router.delete("/users/:id", userController.deleteUser);
-router.delete("/user-images/:userId", userController.deleteUserImage);
+router.delete("/users/:id", idValidator, userController.deleteUser);
+router.delete(
+  "/user-images/:userId",
+  idValidator,
+  userController.deleteUserImage
+);
 
 //User Profile PUT Routes
 router.put(
   "/user-profile/:id",
+  idValidator,
   validate(userProfileSchema),
   userController.updateUserProfile
 );
 
 //User data using FORM Data
-router.post("/user-data", pdfUpload, userController.createUserData);
+// router.post("/user-data", pdfUpload, userController.createUserData);
 
 module.exports = router;

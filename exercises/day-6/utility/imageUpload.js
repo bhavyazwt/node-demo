@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
     const fileName = file.fieldname + "-" + uniqueSuffix + "." + extension;
     req.body.fileName = fileName;
     req.body.extension = extension;
-    req.body.mimetype = file.mimetype;
+    req.body.mimeType = file.mimetype;
 
     cb(null, fileName);
   },
@@ -37,6 +37,11 @@ const upload = multer({
 }).single("profileImage");
 
 function fileUpload(req, res, next) {
+  if (!fs.existsSync(path.join(__dirname, "../tmp/uploads/img"))) {
+    fs.mkdirSync(path.join(__dirname, "../tmp/uploads/img"), {
+      recursive: true,
+    });
+  }
   upload(req, res, (err) => {
     if (err) {
       if (err.code === "LIMIT_FILE_SIZE")
@@ -51,12 +56,7 @@ function fileUpload(req, res, next) {
         return res.status(403).json({ error: err });
       }
     }
-    console.log(req.file);
-    if (!fs.existsSync(path.join(__dirname, "../tmp/uploads/img"))) {
-      fs.mkdirSync(path.join(__dirname, "../tmp/uploads/img"), {
-        recursive: true,
-      });
-    }
+
     next();
   });
 }

@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   UserImages.init(
     {
+      UserId: { type: DataTypes.INTEGER, allowNull: false },
       imageName: { type: DataTypes.STRING, allowNull: false },
       path: { type: DataTypes.STRING, allowNull: false },
       mimeType: { type: DataTypes.STRING, allowNull: false },

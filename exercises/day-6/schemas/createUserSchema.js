@@ -13,7 +13,7 @@ const createUserSchema = yup.object({
       .typeError("Invalid Type: Email Must Be A String"),
     age: yup
       .number()
-      .min(1)
+      .min(1, "Please Enter A Valid Age")
       .max(120)
       .required("A Valid Age Is Required")
       .typeError("Age Must Be A Number"),

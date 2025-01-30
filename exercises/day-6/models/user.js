@@ -8,14 +8,14 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate({ UserProfiles, UserImages }) {
-      this.hasOne(UserProfiles);
-      this.hasMany(UserImages);
+      this.hasOne(UserProfiles, { onDelete: "cascade" });
+      this.hasMany(UserImages, { onDelete: "cascade" });
     }
   }
   User.init(
     {
       name: { type: DataTypes.STRING, allowNull: false },
-      email: { type: DataTypes.STRING, allowNull: false },
+      email: { type: DataTypes.STRING, allowNull: false, unique: true },
       age: { type: DataTypes.INTEGER, allowNull: false },
       role: { type: DataTypes.STRING, allowNull: false },
       isActive: { type: DataTypes.BOOLEAN, allowNull: false },

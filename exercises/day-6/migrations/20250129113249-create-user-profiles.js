@@ -9,9 +9,10 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      userId: {
+      UserId: {
         type: Sequelize.INTEGER,
         allowNull: false,
+        unique: true,
       },
       bio: {
         type: Sequelize.STRING,
@@ -22,7 +23,7 @@ module.exports = {
         allowNull: false,
       },
       facebookUrl: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
         allowNull: false,
       },
       instaUrl: {

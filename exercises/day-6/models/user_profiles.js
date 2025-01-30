@@ -13,9 +13,10 @@ module.exports = (sequelize, DataTypes) => {
   }
   UserProfiles.init(
     {
+      UserId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
       bio: { type: DataTypes.STRING, allowNull: false },
       linkedInUrl: { type: DataTypes.STRING, allowNull: false },
-      facebookUrl: { type: DataTypes.INTEGER, allowNull: false },
+      facebookUrl: { type: DataTypes.STRING, allowNull: false },
       instaUrl: { type: DataTypes.STRING, allowNull: false },
     },
     {
