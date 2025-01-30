@@ -131,12 +131,16 @@ async function updateUser(req, res) {
 
 async function deleteUser(req, res) {
   const id = req?.params?.id;
-  const user = await User.destroy({
-    where: { id },
-  });
+  try {
+    const user = await User.destroy({
+      where: { id },
+    });
 
-  if (!user) return res.status(404).json({ message: "User Not Found" });
-  else return res.status(200).json({ message: "User Deleted Successfully" });
+    if (!user) return res.status(404).json({ message: "User Not Found" });
+    else return res.status(200).json({ message: "User Deleted Successfully" });
+  } catch (err) {
+    return res.status(500).json({ error: err?.errors?.[0]?.message });
+  }
 }
 
 async function fileController(req, res) {
@@ -144,23 +148,26 @@ async function fileController(req, res) {
   const { fileName, extension, mimeType } = req?.body;
   const imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
   const size = req.file.size;
-
-  const userImage = await UserImages.create({
-    UserId: id,
-    imageName: fileName,
-    path: imgPath,
-    mimeType,
-    extension,
-    size,
-  });
-  if (userImage) {
-    return res
-      .status(201)
-      .json({ message: "User Inserted Successfully", data: userImage });
-  } else {
-    return res
-      .status(500)
-      .json({ error: "Error Uploading File, Please Try Again in sometime." });
+  try {
+    const userImage = await UserImages.create({
+      UserId: id,
+      imageName: fileName,
+      path: imgPath,
+      mimeType,
+      extension,
+      size,
+    });
+    if (userImage) {
+      return res
+        .status(201)
+        .json({ message: "User Inserted Successfully", data: userImage });
+    } else {
+      return res
+        .status(500)
+        .json({ error: "Error Uploading File, Please Try Again in sometime." });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err });
   }
 }
 
@@ -213,35 +220,42 @@ async function getUserProfilesById(req, res) {
 async function updateUserProfile(req, res) {
   const id = req?.params?.id;
   const { bio, linkedInUrl, facebookUrl, instaUrl } = req?.body;
-
-  const isUpdated = await UserProfiles.update(
-    { bio, linkedInUrl, facebookUrl, instaUrl },
-    { where: { id } }
-  );
-  if (isUpdated[0]) {
-    const updatedUser = await UserProfiles.findAll({ where: { id } });
-    return res
-      .status(201)
-      .json({ message: "User Updated Successfully", data: updatedUser });
-  } else {
-    return res.status(500).json({ error: "Error Updating User" });
+  try {
+    const isUpdated = await UserProfiles.update(
+      { bio, linkedInUrl, facebookUrl, instaUrl },
+      { where: { id } }
+    );
+    if (isUpdated[0]) {
+      const updatedUser = await UserProfiles.findAll({ where: { id } });
+      return res
+        .status(201)
+        .json({ message: "User Updated Successfully", data: updatedUser });
+    } else {
+      return res.status(500).json({ error: "Error Updating User" });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err });
   }
 }
 
 async function deleteUserImage(req, res) {
   const userId = req?.params?.userId;
-  const user_images = await UserImages.destroy({
-    where: { userId },
-  });
+  try {
+    const user_images = await UserImages.destroy({
+      where: { userId },
+    });
 
-  if (!user_images)
-    return res.status(404).json({
-      error: `User Image for UserID ${userId} not found`,
-    });
-  else
-    return res.status(200).json({
-      message: `User Image for UserID ${userId} deleted successfully`,
-    });
+    if (!user_images)
+      return res.status(404).json({
+        error: `User Image for UserID ${userId} not found`,
+      });
+    else
+      return res.status(200).json({
+        message: `User Image for UserID ${userId} deleted successfully`,
+      });
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
 }
 
 module.exports = {
