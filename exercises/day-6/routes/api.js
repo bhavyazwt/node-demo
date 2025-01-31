@@ -24,11 +24,7 @@ const pdfUpload = require("../utility/pdfUpload");
 router.get("/", userController.home);
 router.get("/users", validate(getUserSchema), userController.getUsers);
 router.get("/users/:id", idValidator, userController.getUsersById);
-router.get(
-  "/user-profile/:id",
-  idValidator,
-  userController.getUserProfilesById
-);
+router.get("/user-profile/:id", userController.getUserProfilesById);
 
 // User POST Routes
 router.post("/users", validate(createUserSchema), userController.createUser);
@@ -45,6 +41,9 @@ router.post(
   userController.createProfile
 );
 
+router.post("/signup", userController.signUp);
+router.post("/login", userController.login);
+
 // User PATCH Routes
 router.patch(
   "/users/:id",
@@ -55,6 +54,7 @@ router.patch(
 
 // User DELETE Routes
 router.delete("/users/:id", idValidator, userController.deleteUser);
+router.delete("/user-profile/:id", userController.deleteUserProfile);
 router.delete(
   "/user-images/:userId",
   idValidator,

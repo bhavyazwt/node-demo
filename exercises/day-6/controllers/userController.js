@@ -1,7 +1,7 @@
 const { permittedUpdates } = require("../../../constants");
 const path = require("path");
 const { User, UserImages, UserProfiles } = require("../models");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 async function home(req, res) {
   return res
     .status(200)
@@ -14,6 +14,14 @@ async function getUsers(req, res) {
     const isActive = req?.query?.isActive;
     const ageGt = req?.query?.ageGt;
     const filters = {};
+    const limit = req?.query?.limit ?? 10;
+    const page = req?.query?.page ?? 1;
+    const createdAtSorting = req?.query?.createdAtSort;
+    const nameSorting = req?.query?.nameSort;
+    const emailSorting = req?.query?.emailSort;
+    const ageSorting = req?.query?.agetSort;
+    const isActiveSorting = req?.query?.isActiveSort;
+
     if (role) {
       filters.role = role;
     }
@@ -26,6 +34,8 @@ async function getUsers(req, res) {
     try {
       const user = await User.findAll({
         include: [{ model: UserProfiles }, { model: UserImages }],
+        limit: limit,
+        offset: limit * (page - 1),
         where: filters,
       });
       if (!user.length)
@@ -206,12 +216,14 @@ async function getUserProfilesById(req, res) {
         id,
       },
     });
+
     if (!user_profile.length)
       return res.status(404).json({ message: "User Not Found" });
-    else
+    else {
       return res
         .status(200)
         .json({ message: `User with ID ${id} found`, data: user_profile });
+    }
   } catch (err) {
     return res.status(500).json({ error: err });
   }
@@ -258,6 +270,79 @@ async function deleteUserImage(req, res) {
   }
 }
 
+async function deleteUserProfile(req, res) {
+  const id = req?.params?.id;
+  try {
+    const user_profile = await UserProfiles.destroy({
+      where: {
+        id,
+      },
+    });
+    if (!user_profile) {
+      return res.status(404).json({
+        error: `User Profile for ID ${id} not found`,
+      });
+    } else {
+      return res.status(200).json({
+        message: `User Profile for ID ${id} deleted successfully`,
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
+}
+
+async function signUp(req, res) {
+  try {
+    const { name, email, age, role, isActive, password } = req?.body;
+    const user = await User.create({
+      name,
+      email,
+      age,
+      role,
+      isActive,
+      password,
+    });
+    if (user) {
+      res
+        .status(201)
+        .json({ message: "User Inserted Successfully", data: user });
+    }
+  } catch (err) {
+    if (
+      err?.name === "SequelizeUniqueConstraintError" &&
+      err?.errors?.[0]?.message === "email must be unique"
+    ) {
+      return res
+        .status(500)
+        .json({ error: "User with EmailID Already Exists" });
+    }
+    return res.status(500).json({ error: err?.errors?.[0]?.message });
+  }
+}
+
+async function login(req, res) {
+  try {
+    const { email, password } = req?.body;
+    const user = await User.findAll({
+      where: { email },
+    });
+    console.log(user);
+    const isValidPassword = await user[0].validPassword(password);
+    if (isValidPassword) {
+      return res
+        .status(200)
+        .json({ message: "Password is valid!, Login Successful" });
+    } else {
+      return res
+        .status(403)
+        .json({ message: "Password is invalid!, Login Unsuccessful" });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: err });
+  }
+}
 module.exports = {
   getUsers,
   getUsersById,
@@ -270,4 +355,7 @@ module.exports = {
   getUserProfilesById,
   updateUserProfile,
   deleteUserImage,
+  deleteUserProfile,
+  signUp,
+  login,
 };

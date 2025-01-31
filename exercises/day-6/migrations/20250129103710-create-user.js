@@ -30,6 +30,9 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         allowNull: false,
       },
+      password: {
+        type: Sequelize.STRING,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
