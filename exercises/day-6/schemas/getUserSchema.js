@@ -14,6 +14,18 @@ const getUserSchema = yup.object({
     isActive: yup
       .boolean()
       .typeError("Enter Valid Active Status in Boolean TRUE OR FALSE"),
+    sort: yup
+      .string()
+      .oneOf(
+        ["age", "createdAt", "updatedAt", "name"],
+        "Sort should be from age, createdAt, updatedAt,name"
+      ),
+    sortType: yup
+      .string()
+      .oneOf(
+        ["ASC", "DESC"],
+        "Invalid Sort Type, Only ASC And DSC are allowed"
+      ),
   }),
 });
 
