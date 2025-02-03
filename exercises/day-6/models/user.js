@@ -1,6 +1,15 @@
 "use strict";
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const ACCESS_TOKEN = {
+  secret: process.env.AUTH_ACCESS_TOKEN_SECRET,
+  expiry: process.env.AUTH_ACCESS_TOKEN_EXPIRY,
+};
+const REFRESH_TOKEN = {
+  secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  expiry: process.env.AUTH_REFRESH_TOKEN_EXPIRY,
+};
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -9,8 +18,47 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
 
+    toJSON() {
+      return { ...this.get(), password: undefined, token: undefined };
+    }
+
     validPassword = async function (password) {
       return await bcrypt.compare(password, this.password);
+    };
+
+    generateRefreshToken = async function () {
+      const user = this;
+      const refreshToken = jwt.sign(
+        {
+          id: user.id.toString(),
+        },
+        REFRESH_TOKEN.secret,
+        {
+          expiresIn: REFRESH_TOKEN.expiry,
+        }
+      );
+
+      const refreshTknHash = await bcrypt.hash(refreshToken, 10);
+      user.token = refreshTknHash;
+      await user.save();
+      return refreshToken;
+    };
+
+    generateAccessToken = async function () {
+      const user = this;
+
+      const accessToken = jwt.sign(
+        {
+          id: user.id.toString(),
+          email: user.email,
+        },
+        ACCESS_TOKEN.secret,
+        {
+          expiresIn: ACCESS_TOKEN.expiry,
+        }
+      );
+
+      return accessToken;
     };
 
     static associate({ UserProfiles, UserImages }) {
@@ -25,6 +73,7 @@ module.exports = (sequelize, DataTypes) => {
       age: { type: DataTypes.INTEGER, allowNull: false },
       role: { type: DataTypes.STRING, allowNull: false },
       isActive: { type: DataTypes.BOOLEAN, allowNull: false },
+      token: { type: DataTypes.STRING },
       password: {
         type: DataTypes.STRING,
         allowNull: false,

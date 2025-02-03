@@ -13,6 +13,9 @@ const userController = require("../controllers/userController");
 const idValidator = require("../middlewares/idValidator");
 const { validate } = require("../validator/validator");
 
+//middlewares
+const authenticate = require("../middlewares/authenticate");
+
 //schema
 const createUserSchema = require("../schemas/createUserSchema");
 const updateUserSchema = require("../schemas/updateUserSchema");
@@ -22,14 +25,34 @@ const pdfUpload = require("../utility/pdfUpload");
 
 // User GET ROUTES
 router.get("/", userController.home);
-router.get("/users", validate(getUserSchema), userController.getUsers);
-router.get("/users/:id", idValidator, userController.getUsersById);
-router.get("/user-profile/:id", userController.getUserProfilesById);
+router.get(
+  "/users",
+  validate(getUserSchema),
+  authenticate,
+  userController.getUsers
+);
+router.get(
+  "/users/:id",
+  authenticate,
+  idValidator,
+  userController.getUsersById
+);
+router.get(
+  "/user-profile/:id",
+  authenticate,
+  userController.getUserProfilesById
+);
 
 // User POST Routes
-router.post("/users", validate(createUserSchema), userController.createUser);
+router.post(
+  "/users",
+  validate(createUserSchema),
+  authenticate,
+  userController.createUser
+);
 router.post(
   "/:id/upload-image",
+  authenticate,
   idValidator,
   fileUpload,
   userController.fileController
@@ -37,26 +60,38 @@ router.post(
 router.post(
   "/:id/user-profile",
   idValidator,
+  authenticate,
   validate(userProfileSchema),
   userController.createProfile
 );
 
 router.post("/signup", userController.signUp);
 router.post("/login", userController.login);
-
+router.post("/reauth", userController.refreshAuthToken);
 // User PATCH Routes
 router.patch(
   "/users/:id",
+  authenticate,
   idValidator,
   validate(updateUserSchema),
   userController.updateUser
 );
 
 // User DELETE Routes
-router.delete("/users/:id", idValidator, userController.deleteUser);
-router.delete("/user-profile/:id", userController.deleteUserProfile);
+router.delete(
+  "/users/:id",
+  authenticate,
+  idValidator,
+  userController.deleteUser
+);
+router.delete(
+  "/user-profile/:id",
+  authenticate,
+  userController.deleteUserProfile
+);
 router.delete(
   "/user-images/:userId",
+  authenticate,
   idValidator,
   userController.deleteUserImage
 );
@@ -64,6 +99,7 @@ router.delete(
 //User Profile PUT Routes
 router.put(
   "/user-profile/:id",
+  authenticate,
   idValidator,
   validate(userProfileSchema),
   userController.updateUserProfile

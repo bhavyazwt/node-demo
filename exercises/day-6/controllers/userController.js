@@ -2,6 +2,25 @@ const { permittedUpdates } = require("../../../constants");
 const path = require("path");
 const { User, UserImages, UserProfiles } = require("../models");
 const { Op, where } = require("sequelize");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
+const REFRESH_TOKEN = {
+  secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  cookie: {
+    name: "refreshTkn",
+    options: {
+      sameSite: "None",
+      secure: true,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  },
+};
+const ACCESS_TOKEN = {
+  secret: process.env.AUTH_ACCESS_TOKEN_SECRET,
+};
+
 async function home(req, res) {
   return res
     .status(200)
@@ -16,11 +35,8 @@ async function getUsers(req, res) {
     const filters = {};
     const limit = req?.query?.limit ?? 10;
     const page = req?.query?.page ?? 1;
-    const createdAtSorting = req?.query?.createdAtSort;
-    const nameSorting = req?.query?.nameSort;
-    const emailSorting = req?.query?.emailSort;
-    const ageSorting = req?.query?.agetSort;
-    const isActiveSorting = req?.query?.isActiveSort;
+    const sort = req?.query?.sort;
+    const sortType = req?.query?.sortType;
 
     if (role) {
       filters.role = role;
@@ -34,13 +50,12 @@ async function getUsers(req, res) {
     try {
       const user = await User.findAll({
         include: [{ model: UserProfiles }, { model: UserImages }],
-        limit: limit,
+        limit: Number(limit),
         offset: limit * (page - 1),
         where: filters,
+        order: [[sort, sortType]],
       });
-      if (!user.length)
-        return res.status(404).json({ message: "No User Found" });
-      else return res.status(200).json({ message: `Users Found`, data: user });
+      return res.status(200).json({ message: `Users Found`, data: user });
     } catch (err) {
       console.log(err);
       return res.status(500).json({ error: err });
@@ -303,10 +318,21 @@ async function signUp(req, res) {
       isActive,
       password,
     });
+    // console.log(user);
     if (user) {
-      res
-        .status(201)
-        .json({ message: "User Inserted Successfully", data: user });
+      const accessToken = await user.generateAccessToken(); // Create Access Token
+      const refreshToken = await user.generateRefreshToken(); // Create Refresh Token
+      res.cookie(
+        REFRESH_TOKEN.cookie.name,
+        refreshToken,
+        REFRESH_TOKEN.cookie.options
+      );
+
+      res.status(201).json({
+        success: true,
+        user,
+        accessToken,
+      });
     }
   } catch (err) {
     if (
@@ -317,32 +343,67 @@ async function signUp(req, res) {
         .status(500)
         .json({ error: "User with EmailID Already Exists" });
     }
-    return res.status(500).json({ error: err?.errors?.[0]?.message });
+    return res.status(500).json(err);
   }
 }
 
 async function login(req, res) {
   try {
     const { email, password } = req?.body;
-    const user = await User.findAll({
-      where: { email },
+
+    const user = await User.findOne({ where: { email } });
+    if (!user)
+      return res.status(404).json({ error: "User is not registered!" });
+    const isPassValid = user.validPassword(email, password);
+    if (!isPassValid)
+      return res.status(403).json({ error: "Invalid Email/Password." });
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+    res.cookie(
+      REFRESH_TOKEN.cookie.name,
+      refreshToken,
+      REFRESH_TOKEN.cookie.options
+    );
+    res.json({
+      success: true,
+      user,
+      accessToken,
     });
-    console.log(user);
-    const isValidPassword = await user[0].validPassword(password);
-    if (isValidPassword) {
-      return res
-        .status(200)
-        .json({ message: "Password is valid!, Login Successful" });
-    } else {
-      return res
-        .status(403)
-        .json({ message: "Password is invalid!, Login Unsuccessful" });
-    }
   } catch (err) {
     console.log(err);
     return res.status(500).json({ message: err });
   }
 }
+
+async function refreshAuthToken(req, res) {
+  try {
+    const cookies = req.cookies;
+    const refreshToken = cookies[REFRESH_TOKEN.cookie.name];
+
+    if (!refreshToken) {
+      throw new Error("Unauthorised User!");
+    }
+    const decodedRefreshTkn = jwt.verify(refreshToken, REFRESH_TOKEN.secret);
+    console.log(decodedRefreshTkn);
+    const refreshTknHash = await bcrypt.hash(refreshToken, 10);
+    console.log("hash", refreshTknHash);
+    const userWithRefreshTkn = await User.findOne({
+      where: { id: decodedRefreshTkn.id, token: refreshTknHash },
+    });
+    console.log("new", userWithRefreshTkn);
+    if (!userWithRefreshTkn) {
+      throw new Error("Unauthorised User!");
+    }
+    const newAcessTkn = await userWithRefreshTkn.generateAccessToken();
+    return res.status(201).json({
+      success: true,
+      accessToken: newAcessTkn,
+    });
+  } catch (err) {
+    return res.status(500).json({ err });
+  }
+}
+// app.post("/refresh");
 module.exports = {
   getUsers,
   getUsersById,
@@ -358,4 +419,5 @@ module.exports = {
   deleteUserProfile,
   signUp,
   login,
+  refreshAuthToken,
 };
