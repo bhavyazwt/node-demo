@@ -21,4 +21,17 @@ const permittedUpdates = ["name", "email", "age", "role", "isActive"];
 
 const roles = ["User", "Admin"];
 
-module.exports = { users, permittedUpdates, roles };
+const REFRESH_TOKEN = {
+  secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
+  cookie: {
+    name: "refreshTkn",
+    options: {
+      sameSite: "None",
+      secure: true,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  },
+};
+
+module.exports = { users, permittedUpdates, roles, REFRESH_TOKEN };

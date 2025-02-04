@@ -8,7 +8,9 @@
     "migrate5": "node exercises/day-5/db/migrationsRunner",
     "day3": "node ./exercises/day-3/index.js",
     "day5": "node ./exercises/day-5/index.js",
-    "day6": "node ./exercises/day-6/index.js"
+    "day6": "node ./exercises/day-6/index.js",
+    "ecommerce": "node ./exercises/eCommerce/index.js",
+    "ecommerce:migrate": "npx sequelize-cli db:migrate --migrations-path ./exercises/eCommerce/migrations"
   },
   "author": "",
   "license": "ISC",
