@@ -35,8 +35,8 @@ async function getUsers(req, res) {
     const filters = {};
     const limit = req?.query?.limit ?? 10;
     const page = req?.query?.page ?? 1;
-    const sort = req?.query?.sort;
-    const sortType = req?.query?.sortType;
+    const sort = req?.query?.sort ?? "createdAt";
+    const sortType = req?.query?.sortType ?? "ASC";
 
     if (role) {
       filters.role = role;
