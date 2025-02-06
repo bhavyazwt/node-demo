@@ -15,28 +15,35 @@ async function placeOrder(req, res) {
       isOrderCreated.orderItems.forEach(async (orderItem) => {
         await reduceQuantityFromDB(orderItem.product_id, orderItem.quantity);
       });
-      res.status(200).json({ isOrderCreated });
+      return res
+        .status(200)
+        .json({ message: "Order Placed Successful", data: isOrderCreated });
     } else {
       throw new Error("Error Placing Order!");
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 
+// Get Order Details Of User
 async function getOrderDetails(req, res) {
   try {
     const user_id = req.userId;
     const order_id = req?.params?.id;
     const orders = await getOrdersFromDB(user_id, order_id);
     if (orders) {
-      res.status(200).json(orders);
+      return res.status(200).json({
+        message: orders.length ? "Order Details Found" : "No Orders Found",
+        data: orders,
+      });
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
 
+//Update Order Details - [Only ADMINS]
 async function updateOrderDetails(req, res) {
   try {
     const order_id = req?.params?.id;
@@ -45,23 +52,16 @@ async function updateOrderDetails(req, res) {
     const isOrderUpdated = await updateOrderInDB(order_id, status);
     if (isOrderUpdated) {
       const orderDetails = await getOrdersFromDB(userId, order_id);
-      res.status(200).json({
+      return res.status(200).json({
         message: "Order Details Updated Successfully!",
         data: orderDetails,
       });
     }
   } catch (err) {
-    res.status(500).json({ error: `Something Went Wrong ${err.message}` });
+    return res
+      .status(500)
+      .json({ error: `Something Went Wrong ${err.message}` });
   }
 }
-
-// async function getAllCategories(req, res) {
-//   try {
-//     const categories = await getCategories();
-//     res.status(200).json(categories);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// }
 
 module.exports = { placeOrder, getOrderDetails, updateOrderDetails };

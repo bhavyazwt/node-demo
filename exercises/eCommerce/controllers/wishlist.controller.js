@@ -4,6 +4,7 @@ const {
   deleteProductFromWishlistDB,
 } = require("../services/wishlist.service");
 
+// Add Product To Wishlist
 async function addProductToWishlist(req, res) {
   try {
     const { productId } = req?.body;
@@ -28,6 +29,7 @@ async function addProductToWishlist(req, res) {
   }
 }
 
+// Get Product In Wishlist From DB
 async function getProductsInWishlist(req, res) {
   try {
     const user_id = req.userId;
@@ -49,6 +51,7 @@ async function getProductsInWishlist(req, res) {
   }
 }
 
+// Delete Product In Wishlist From DB
 async function deleteProductFromWishlist(req, res) {
   try {
     const productId = req.params.id;
