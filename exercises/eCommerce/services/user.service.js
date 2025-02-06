@@ -39,19 +39,12 @@ async function updateUserProfile(id, first_name, last_name, email) {
 /**
  * @description - Get's user with a filter role (Default: All Roles)
  * @param {string} role - user's role ['customer', 'admin']
+ * @param {object} sortingAndPagination - Contains sorting and pagination details (page number,limit)
  **/
-async function getUsers(
-  role,
-  limit = 10,
-  page = 1,
-  sort = "id",
-  sortType = "ASC"
-) {
+async function getUsers(role, sortingAndPagination) {
   try {
     const users = await User.findAll({
-      limit,
-      offset: limit * (page - 1),
-      order: [[sort, sortType]],
+      ...sortingAndPagination,
       ...(role && { where: { role } }),
     });
     return users;

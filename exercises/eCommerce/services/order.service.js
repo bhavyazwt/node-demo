@@ -5,6 +5,7 @@ async function createOrder(user_id) {
     include: [{ model: Product }],
     where: { user_id },
   });
+
   let total_price = 0;
   const orderItems = cartItems.map((item) => {
     total_price += item.quantity * item.Product.price;

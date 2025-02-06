@@ -1,5 +1,9 @@
 const { Category } = require("../models");
 
+/**
+ * @description - Create New Category
+ * @param {string} name - new category name (Unique)
+ **/
 async function addNewCategory(name) {
   try {
     return await Category.create({ name });
@@ -11,9 +15,14 @@ async function addNewCategory(name) {
   }
 }
 
-async function getCategories() {
+/**
+ * @description - Get All Categories
+ **/
+async function getCategories(sortingAndPagination) {
   try {
-    return await Category.findAll();
+    return await Category.findAll({
+      ...sortingAndPagination,
+    });
   } catch (err) {
     throw new Error(`Error finding categories: ${err.message}`);
   }

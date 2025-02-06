@@ -3,6 +3,11 @@ const {
   getCategories,
 } = require("../services/category.service");
 
+const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
+
+/**
+ *  @description Create New Category. - [Only Admins]
+ **/
 async function createCategory(req, res) {
   try {
     const { name } = req?.body;
@@ -17,9 +22,13 @@ async function createCategory(req, res) {
   }
 }
 
+/**
+ *  @description Fetch All Categories. - [PUBLIC]
+ **/
 async function getAllCategories(req, res) {
+  const sortingAndPagination = getPaginationAndSorting(req.query);
   try {
-    const categories = await getCategories();
+    const categories = await getCategories(sortingAndPagination);
     res.status(200).json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });

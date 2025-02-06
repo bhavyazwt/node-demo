@@ -3,6 +3,7 @@ const {
   updateUserProfile,
   getUsers,
 } = require("../services/user.service");
+const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
 
 /**
  * @description Gets profile of logged in user (Based on JWT)
@@ -50,12 +51,10 @@ async function updateProfile(req, res) {
 
 async function getAllUsers(req, res) {
   const role = req.query.role ?? null;
-  const limit = req?.query?.limit ?? 10;
-  const page = req?.query?.page ?? 1;
-  const sort = req?.query?.sort ?? "id";
-  const sortType = req?.query?.sortType ?? "ASC";
+  const sortingAndPagination = getPaginationAndSorting(req.query);
+
   try {
-    const allUsers = await getUsers(role, limit, page, sort, sortType);
+    const allUsers = await getUsers(role, sortingAndPagination);
     if (allUsers) {
       res.status(200).json(allUsers);
     }

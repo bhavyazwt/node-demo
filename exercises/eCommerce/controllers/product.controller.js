@@ -6,17 +6,15 @@ const {
   deleteImageFromStorage,
 } = require("../services/product.service");
 const path = require("path");
-const fs = require("fs");
+const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
 
 async function addNewProduct(req, res) {
   let imgPath;
   try {
     const { name, description, price, stock, category_id, fileName } =
       req?.body;
-    console.log();
-    let imgPath;
-    console.log(name, description, price, stock, category_id, fileName);
     if (fileName) {
+      //Storing Path To Delete In Case of Error
       imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
     }
     const isProductAdded = await addProduct(
@@ -29,7 +27,10 @@ async function addNewProduct(req, res) {
     );
 
     if (isProductAdded) {
-      res.status(200).json({ message: "Product Added Successfully" });
+      const newProduct = await getProductsFromDB(isProductAdded.id);
+      res
+        .status(200)
+        .json({ message: "Product Added Successfully", data: newProduct });
     }
   } catch (err) {
     if (imgPath) deleteImageFromStorage(imgPath);
@@ -42,19 +43,12 @@ async function addNewProduct(req, res) {
   }
 }
 
+//Get All Products
 async function getProducts(req, res) {
   try {
-    const limit = req?.query?.limit ?? 10;
-    const page = req?.query?.page ?? 1;
-    const sort = req?.query?.sort ?? "id";
-    const sortType = req?.query?.sortType ?? "ASC";
-    const products = await getProductsFromDB(
-      null,
-      Number(page),
-      Number(limit),
-      sort,
-      sortType
-    );
+    const sortingAndPagination = getPaginationAndSorting(req.query);
+    const products = await getProductsFromDB(null, sortingAndPagination);
+
     if (products) {
       return res.status(200).json({
         message: products?.length
@@ -69,6 +63,7 @@ async function getProducts(req, res) {
   }
 }
 
+//Get Individual Product by ID
 async function getProductsById(req, res) {
   try {
     const id = req.params.id;
@@ -83,6 +78,7 @@ async function getProductsById(req, res) {
   }
 }
 
+//Update Product
 async function updateProducts(req, res) {
   try {
     const id = req.params.id;
@@ -96,7 +92,7 @@ async function updateProducts(req, res) {
       oldImgPath = oldProduct.image_url;
       imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
     }
-    const updateObj = {
+    const updatedProduct = {
       ...(name && { name }),
       ...(description && { description }),
       ...(price && { price }),
@@ -105,7 +101,7 @@ async function updateProducts(req, res) {
       ...(fileName && { image_url: imgPath }),
     };
 
-    const isUpdated = await updateProduct(id, updateObj);
+    const isUpdated = await updateProduct(id, updatedProduct);
     if (isUpdated) {
       if (oldImgPath) {
         deleteImageFromStorage(oldImgPath);
@@ -127,6 +123,7 @@ async function updateProducts(req, res) {
   }
 }
 
+// Delete Product
 async function deleteProduct(req, res) {
   try {
     const id = req.params.id;
@@ -146,6 +143,7 @@ async function deleteProduct(req, res) {
     res.status(500).json({ error: `Something Went Wrong,${err.message}` });
   }
 }
+
 module.exports = {
   addNewProduct,
   getProducts,

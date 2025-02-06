@@ -8,6 +8,9 @@ const addProductSchema = require("../schemas/addProductSchema");
 const updateProductSchema = require("../schemas/updateProductSchema");
 const getProductSchema = require("../schemas/getProductSchema");
 
+//POST Routes
+
+// Add New Product
 productRouter.post(
   "/",
   authenticate(["admin"]),
@@ -16,14 +19,21 @@ productRouter.post(
   productController.addNewProduct
 );
 
+//GET Routes
+
+//Get Products
 productRouter.get(
   "/",
   validate(getProductSchema),
   productController.getProducts
 );
 
+//Get Product Details
 productRouter.get("/:id", productController.getProductsById);
 
+//PATCH Routes
+
+//Update A Product
 productRouter.patch(
   "/:id",
   authenticate(["admin"]),
@@ -32,6 +42,9 @@ productRouter.patch(
   productController.updateProducts
 );
 
+//Delete Routes
+
+//Delete A Product
 productRouter.delete("/:id", productController.deleteProduct);
 
 module.exports = productRouter;

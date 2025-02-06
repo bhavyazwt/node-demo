@@ -1,5 +1,15 @@
 const { Product } = require("../models");
 const fs = require("fs");
+
+/**
+ * @description - Add New Product In DB
+ * @param {string} name - Product Name [Mandatory]
+ * @param {string} description - Description Of Product [Optional]
+ * @param {number} Price - Price Of Product [Mandatory]
+ * @param {number} stock - Stock Of Product [Mandatory]
+ * @param {string} category_id - Category Of Product [ Foreign Key ]
+ * @param {string} image_url - URL of uploaded image
+ **/
 async function addProduct(
   name,
   description,
@@ -22,34 +32,39 @@ async function addProduct(
   }
 }
 
-async function getProductsFromDB(
-  id = null,
-  page = 1,
-  limit = 10,
-  sort = "id",
-  sortType = "ASC"
-) {
+/**
+ * @description - Fetch Product From DB
+ * @param {number} ID -  Optional, If not passed gives all orders.
+ * @param {object} sortingAndPagination - Sorting And Pagination
+ **/
+async function getProductsFromDB(id, sortingAndPagination = {}) {
   try {
-    if (!id)
-      return Product.findAll({
-        limit,
-        offset: limit * (page - 1),
-        order: [[sort, sortType]],
-      });
-    return Product.findOne({ where: { id } });
+    return Product.findAll({
+      ...(id && { where: { id } }),
+      ...sortingAndPagination,
+    });
   } catch (err) {
     throw new Error(`Error getting products: ${err.message}`);
   }
 }
 
-async function updateProduct(id, updateBody) {
+/**
+ * @description - Fetch Product In DB
+ * @param {number} ID -  [Mandatory]
+ * @param {object} updatedProduct - Updated Product Object
+ **/
+async function updateProduct(id, updatedProduct) {
   try {
-    return Product.update(updateBody, { where: { id } });
+    return Product.update(updatedProduct, { where: { id } });
   } catch (err) {
     throw new Error(`Error Updating Product! ${err.message}`);
   }
 }
 
+/**
+ * @description - Deletes Product From DB
+ * @param {number} ID -  [Mandatory]
+ **/
 async function deleteProductFromDB(id) {
   try {
     return Product.destroy({ where: { id } });
@@ -58,6 +73,10 @@ async function deleteProductFromDB(id) {
   }
 }
 
+/**
+ * @description - Deletes Image From Local Directory
+ * @param {string} path - Path To Image
+ **/
 async function deleteImageFromStorage(path) {
   fs.unlink(path, (err) => {
     if (err && err.code == "ENOENT") {
@@ -68,12 +87,18 @@ async function deleteImageFromStorage(path) {
   });
 }
 
+/**
+ * @description - Reduce Quantity After Order is Placed
+ * @param {string} product_id - Product's id whose quantity to reduce
+ * @param {string} quantity - Quantity to reduce from product
+ **/
 async function reduceQuantityFromDB(product_id, quantity) {
   const product = await Product.findOne({ where: { id: product_id } });
-  console.log(product);
+
   if (product.stock - quantity === 0) {
     return await Product.destroy({ id: product_id });
   }
+
   product.stock -= quantity;
   await product.save();
 }
