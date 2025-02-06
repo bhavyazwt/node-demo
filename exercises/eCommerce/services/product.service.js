@@ -22,9 +22,20 @@ async function addProduct(
   }
 }
 
-async function getProductsFromDB(id = null) {
+async function getProductsFromDB(
+  id = null,
+  page = 1,
+  limit = 10,
+  sort = "id",
+  sortType = "ASC"
+) {
   try {
-    if (!id) return Product.findAll();
+    if (!id)
+      return Product.findAll({
+        limit,
+        offset: limit * (page - 1),
+        order: [[sort, sortType]],
+      });
     return Product.findOne({ where: { id } });
   } catch (err) {
     throw new Error(`Error getting products: ${err.message}`);
