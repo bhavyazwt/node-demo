@@ -2,6 +2,8 @@ const express = require("express");
 const userRouter = express.Router();
 const userController = require("../controllers/user.controller");
 const authenticate = require("../middlewares/authenticate");
+const { validate } = require("../validator/validator");
+const updateUserSchema = require("../schemas/updateUserSchema1");
 
 userRouter.get(
   "/profile",
@@ -11,6 +13,7 @@ userRouter.get(
 userRouter.put(
   "/profile",
   authenticate(["admin", "customer"]),
+  validate(updateUserSchema),
   userController.updateProfile
 );
 

@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     validPassword = async function (password) {
-      return await bcrypt.compare(password, this.password);
+      return bcrypt.compare(password, this.password);
     };
 
     generateRefreshToken = async function () {
@@ -63,9 +63,9 @@ module.exports = (sequelize, DataTypes) => {
     };
 
     static associate({ Cart, Order, Wishlist }) {
-      this.hasOne(Cart);
-      this.hasMany(Order);
-      this.hasOne(Wishlist);
+      this.hasOne(Cart, { foreignKey: "user_id", onDelete: "cascade" });
+      this.hasMany(Order, { foreignKey: "user_id", onDelete: "cascade" });
+      this.hasOne(Wishlist, { foreignKey: "user_id" });
     }
   }
   User.init(

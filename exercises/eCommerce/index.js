@@ -9,8 +9,11 @@ const PORT = process.env.PORT || 5000;
 
 const authRoutes = require("./routes/auth.route");
 const userRoutes = require("./routes/user.route");
-const categoryRouter = require("./routes/category.route");
-const productRouter = require("./routes/product.route");
+const categoryRoutes = require("./routes/category.route");
+const productRoutes = require("./routes/product.route");
+const cartRoutes = require("./routes/cart.route");
+const wishlistRoutes = require("./routes/wishlist.route");
+const orderRoutes = require("./routes/order.route");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -18,15 +21,18 @@ app.use(loggerMiddleWare);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/categories", categoryRouter);
-app.use("/api/products", productRouter);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/order", orderRoutes);
 
 app.get("/status", (req, res) => {
   res.send("API RUNNING!");
 });
 
 app.listen(PORT, async () => {
-  await sequelize.sync({ force: true });
+  await sequelize.sync();
   console.log("Database Connected!");
   console.log(`Server running on port ${PORT}`);
 });

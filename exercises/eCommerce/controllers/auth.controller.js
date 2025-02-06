@@ -1,6 +1,3 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
-const { User } = require("../models/user");
 const { signUpUserService, loginService } = require("../services/auth.service");
 const { REFRESH_TOKEN } = require("../../../constants");
 
@@ -32,6 +29,8 @@ async function signUp(req, res) {
 async function login(req, res) {
   try {
     const { email, password } = req?.body;
+
+    console.log(email, password);
     const [user, accessToken, refreshToken] = await loginService(
       email,
       password
@@ -48,7 +47,7 @@ async function login(req, res) {
     });
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ message: err });
+    return res.status(500).json({ message: err.message });
   }
 }
 

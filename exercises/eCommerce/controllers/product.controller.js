@@ -1,27 +1,144 @@
-const { addProduct } = require("../services/product.service");
+const {
+  addProduct,
+  getProductsFromDB,
+  updateProduct,
+  deleteProductFromDB,
+  deleteImageFromStorage,
+} = require("../services/product.service");
+const path = require("path");
+const fs = require("fs");
 
 async function addNewProduct(req, res) {
   try {
-    const { name, description, price, stock, category_id } = req?.body;
-    const { productImage } = req?.file;
+    const { name, description, price, stock, category_id, fileName } =
+      req?.body;
+    console.log();
+    let imgPath;
+    console.log(name, description, price, stock, category_id, fileName);
+    if (fileName) {
+      imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
+    }
     const isProductAdded = await addProduct(
       name,
       description,
       price,
       stock,
       category_id,
-      productImage
+      imgPath
     );
 
     if (isProductAdded) {
       res.status(200).json({ message: "Product Added Successfully" });
     }
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: err });
+    /*
+      TODO: Delete image if error in adding product
+    */
+    if (err.name === "SequelizeForeignKeyConstraintError") {
+      return res
+        .status(500)
+        .json({ error: "Category Doesn't exists! Add a valid category" });
+    }
+    return res.status(500).json({ error: err });
   }
 }
 
+async function getProducts(req, res) {
+  try {
+    const products = await getProductsFromDB();
+    if (products) {
+      res.status(200).json({
+        message: products?.length
+          ? "Product Found Successfully"
+          : "No Products Found",
+        data: products,
+      });
+    }
+  } catch (err) {}
+}
+
+async function getProductsById(req, res) {
+  try {
+    const id = req.params.id;
+    const product = await getProductsFromDB(id);
+    if (product) {
+      res
+        .status(200)
+        .json({ message: "Product Found Successfully!", data: product });
+    }
+  } catch (err) {
+    res.status(500).json({ message: `Error Finding Product, ${err.message}` });
+  }
+}
+
+async function updateProducts(req, res) {
+  try {
+    const id = req.params.id;
+    const { name, description, price, stock, category_id, fileName } =
+      req?.body;
+
+    let imgPath, oldImgPath;
+
+    if (fileName) {
+      const oldProduct = await getProductsFromDB(id);
+      oldImgPath = oldProduct.image_url;
+      imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
+    }
+
+    const updateObj = {
+      ...(name && { name }),
+      ...(description && { description }),
+      ...(price && { price }),
+      ...(stock && { stock }),
+      ...(category_id && { category_id }),
+      ...(fileName && { image_url: imgPath }),
+    };
+
+    const isUpdated = await updateProduct(id, updateObj);
+    if (isUpdated) {
+      if (oldImgPath) {
+        deleteImageFromStorage(oldImgPath);
+      }
+      const product = await getProductsFromDB(id);
+      return res
+        .status(200)
+        .json({ message: "Product Updated Successfully.", data: product });
+    }
+  } catch (err) {
+    if (err.name === "SequelizeForeignKeyConstraintError") {
+      return res
+        .status(500)
+        .json({ error: "Category Doesn't exists! Add a valid category" });
+    }
+    return res
+      .status(500)
+      .json({ error: `Error Updating Product, ${err.message} ` });
+  }
+}
+
+async function deleteProduct(req, res) {
+  try {
+    const id = req.params.id;
+    let imgPath;
+    const product = getProductsFromDB(id);
+    if (product.image_url) {
+      imgPath = product.image_url;
+    }
+    const isDeleted = await deleteProductFromDB(id);
+    if (isDeleted) {
+      if (imgPath) deleteImageFromStorage(imgPath);
+      res.status(200).json({ message: "Product Deleted Successfully" });
+    } else {
+      throw new Error("Product Doesn't exist");
+    }
+  } catch (err) {
+    res.status(500).json({ error: `Something Went Wrong,${err.message}` });
+  }
+}
 module.exports = {
   addNewProduct,
+  getProducts,
+  getProductsById,
+  updateProducts,
+  deleteProduct,
 };

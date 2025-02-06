@@ -7,7 +7,6 @@ const {
 async function getProfile(req, res) {
   try {
     const userId = req?.userId;
-    console.log("user from eget", userId);
     const userProfile = await getUserProfile(userId);
     res.status(200).json(userProfile);
   } catch (err) {
@@ -19,7 +18,6 @@ async function updateProfile(req, res) {
   try {
     const userId = req?.userId;
     const { first_name, last_name, email } = req?.body;
-    console.log("userrrr", userId);
     const isProfileUpdated = await updateUserProfile(
       userId,
       first_name,
@@ -28,7 +26,9 @@ async function updateProfile(req, res) {
     );
     if (isProfileUpdated) {
       const userProfile = await getUserProfile(userId);
-      res.status(201).json(userProfile);
+      res
+        .status(201)
+        .json({ message: "User Updated Successfully", data: userProfile });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });

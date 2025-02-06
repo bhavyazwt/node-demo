@@ -25,23 +25,21 @@ async function signUpUserService(first_name, last_name, email, password, role) {
 }
 
 async function loginService(email, password) {
-  try {
-    //Check if user exists
-    const user = await User.findOne({ where: { email } });
-    if (!user) throw new Error({ error: "User is not registered!" });
+  //Check if user exists
+  console.log(email, password);
+  const user = await User.findOne({ where: { email } });
+  if (!user) throw new Error("User is not registered!");
+  console.log(user);
+  //Check for valid password
+  const isPassValid = user.validPassword(password);
+  if (!isPassValid) throw new Error("Invalid Email/Password.");
 
-    //Check for valid password
-    const isPassValid = user.validPassword(email, password);
-    if (!isPassValid) throw new Error({ error: "Invalid Email/Password." });
-
-    //Generate Tokens if user exists
-    const accessToken = await user.generateAccessToken();
-    const refreshToken = await user.generateRefreshToken();
-
-    return [user, accessToken, refreshToken];
-  } catch (err) {
-    throw new Error(err);
-  }
+  //Generate Tokens if user exists
+  const accessToken = await user.generateAccessToken();
+  const refreshToken = await user.generateRefreshToken();
+  if (!accessToken || !refreshToken)
+    throw new Error("Error Generating Tokens.");
+  return [user, accessToken, refreshToken];
 }
 
 module.exports = {
