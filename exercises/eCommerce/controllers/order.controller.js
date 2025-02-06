@@ -40,7 +40,7 @@ async function getOrderDetails(req, res) {
 async function updateOrderDetails(req, res) {
   try {
     const order_id = req?.params?.id;
-    const status = req?.params?.status;
+    const { status } = req.body;
     const userId = req?.userId;
     const isOrderUpdated = await updateOrderInDB(order_id, status);
     if (isOrderUpdated) {

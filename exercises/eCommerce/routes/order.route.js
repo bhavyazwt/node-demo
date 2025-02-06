@@ -22,7 +22,7 @@ orderRouter.get(
 );
 
 orderRouter.put(
-  "/:id/:status",
+  "/:id/status",
   authenticate(["admin", "customer"]),
   orderController.updateOrderDetails
 );
