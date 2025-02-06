@@ -6,6 +6,7 @@ const { fileUpload } = require("../utility/imageUpload");
 const { validate } = require("../validator/validator");
 const addProductSchema = require("../schemas/addProductSchema");
 const updateProductSchema = require("../schemas/updateProductSchema");
+const getProductSchema = require("../schemas/getProductSchema");
 
 productRouter.post(
   "/",
@@ -15,7 +16,11 @@ productRouter.post(
   productController.addNewProduct
 );
 
-productRouter.get("/", productController.getProducts);
+productRouter.get(
+  "/",
+  validate(getProductSchema),
+  productController.getProducts
+);
 
 productRouter.get("/:id", productController.getProductsById);
 
