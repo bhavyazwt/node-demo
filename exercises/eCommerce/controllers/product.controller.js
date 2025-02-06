@@ -9,6 +9,7 @@ const path = require("path");
 const fs = require("fs");
 
 async function addNewProduct(req, res) {
+  let imgPath;
   try {
     const { name, description, price, stock, category_id, fileName } =
       req?.body;
@@ -31,9 +32,7 @@ async function addNewProduct(req, res) {
       res.status(200).json({ message: "Product Added Successfully" });
     }
   } catch (err) {
-    /*
-      TODO: Delete image if error in adding product
-    */
+    if (imgPath) deleteImageFromStorage(imgPath);
     if (err.name === "SequelizeForeignKeyConstraintError") {
       return res
         .status(500)
@@ -45,16 +44,29 @@ async function addNewProduct(req, res) {
 
 async function getProducts(req, res) {
   try {
-    const products = await getProductsFromDB();
+    const limit = req?.query?.limit ?? 10;
+    const page = req?.query?.page ?? 1;
+    const sort = req?.query?.sort ?? "id";
+    const sortType = req?.query?.sortType ?? "ASC";
+    const products = await getProductsFromDB(
+      null,
+      Number(page),
+      Number(limit),
+      sort,
+      sortType
+    );
     if (products) {
-      res.status(200).json({
+      return res.status(200).json({
         message: products?.length
           ? "Product Found Successfully"
           : "No Products Found",
         data: products,
       });
     }
-  } catch (err) {}
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: err });
+  }
 }
 
 async function getProductsById(req, res) {
@@ -84,7 +96,6 @@ async function updateProducts(req, res) {
       oldImgPath = oldProduct.image_url;
       imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
     }
-
     const updateObj = {
       ...(name && { name }),
       ...(description && { description }),
