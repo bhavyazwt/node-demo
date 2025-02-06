@@ -17,6 +17,8 @@ productRouter.post(
 
 productRouter.get("/", productController.getProducts);
 
+productRouter.get("/:id", productController.getProductsById);
+
 productRouter.patch(
   "/:id",
   authenticate(["admin"]),
