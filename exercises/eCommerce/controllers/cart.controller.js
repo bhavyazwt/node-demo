@@ -3,12 +3,24 @@ const {
   getProductInCartDB,
   deleteProductFromCartDB,
 } = require("../services/cart.service");
+const { getProductsFromDB } = require("../services/product.service");
 
 // Add's Product To Cart
 async function addProductToCart(req, res) {
   try {
     const { productId, quantity } = req?.body;
+
+    // Validating If Product Exists Or Not.
+    const product = await getProductsFromDB(productId);
+    if (!product.length) {
+      return res
+        .status(500)
+        .json({ error: "Product Doesn't exists! Add a valid Product" });
+    }
+
+    //Adding to Cart if Product exists.
     const cart = await addProductToCartDB(req.userId, productId, quantity);
+
     if (cart) {
       return res
         .status(200)
@@ -17,11 +29,6 @@ async function addProductToCart(req, res) {
       throw new Error("Error Adding Product");
     }
   } catch (err) {
-    if (err.name === "SequelizeForeignKeyConstraintError") {
-      return res
-        .status(500)
-        .json({ error: "Product Doesn't exists! Add a valid Product" });
-    }
     return res.status(500).json({
       error: `Something Went Wrong, ${err.message}`,
     });

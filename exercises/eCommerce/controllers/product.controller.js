@@ -7,16 +7,27 @@ const {
 } = require("../services/product.service");
 const path = require("path");
 const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
+const { getCategories } = require("../services/category.service");
 
 async function addNewProduct(req, res) {
   let imgPath;
   try {
     const { name, description, price, stock, category_id, fileName } =
       req?.body;
+
     if (fileName) {
       //Storing Path To Delete In Case of Error
       imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
     }
+
+    const category = await getCategories(category_id);
+    if (!category.length) {
+      if (imgPath) deleteImageFromStorage(imgPath);
+      return res
+        .status(404)
+        .json({ error: "Category Doesn't exists! Add a valid category" });
+    }
+
     const isProductAdded = await addProduct(
       name,
       description,
@@ -34,11 +45,6 @@ async function addNewProduct(req, res) {
     }
   } catch (err) {
     if (imgPath) deleteImageFromStorage(imgPath);
-    if (err.name === "SequelizeForeignKeyConstraintError") {
-      return res
-        .status(500)
-        .json({ error: "Category Doesn't exists! Add a valid category" });
-    }
     return res.status(500).json({ error: err });
   }
 }
@@ -85,6 +91,12 @@ async function updateProducts(req, res) {
     const { name, description, price, stock, category_id, fileName } =
       req?.body;
 
+    const category = await getCategories(category_id);
+    if (!category.length) {
+      return res
+        .status(404)
+        .json({ error: "Category Doesn't exists! Add a valid category" });
+    }
     let imgPath, oldImgPath;
 
     if (fileName) {
@@ -112,11 +124,6 @@ async function updateProducts(req, res) {
         .json({ message: "Product Updated Successfully.", data: product });
     }
   } catch (err) {
-    if (err.name === "SequelizeForeignKeyConstraintError") {
-      return res
-        .status(500)
-        .json({ error: "Category Doesn't exists! Add a valid category" });
-    }
     return res
       .status(500)
       .json({ error: `Error Updating Product, ${err.message} ` });

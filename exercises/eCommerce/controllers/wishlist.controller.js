@@ -9,6 +9,14 @@ async function addProductToWishlist(req, res) {
   try {
     const { productId } = req?.body;
 
+    // Validating If Product Exists Or Not.
+    const product = await getProductsFromDB(productId);
+    if (!product) {
+      return res
+        .status(500)
+        .json({ error: "Product Doesn't exists! Add a valid Product" });
+    }
+
     const wishlist = await addProductToWishlistDB(req.userId, productId);
     if (wishlist) {
       return res
@@ -18,11 +26,6 @@ async function addProductToWishlist(req, res) {
       throw new Error("Error Adding Product");
     }
   } catch (err) {
-    if (err.name === "SequelizeForeignKeyConstraintError") {
-      return res
-        .status(500)
-        .json({ error: "Product Doesn't exists! Add a valid Product" });
-    }
     return res.status(500).json({
       error: `Something Went Wrong, ${err.message}`,
     });

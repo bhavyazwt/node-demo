@@ -28,7 +28,7 @@ async function createCategory(req, res) {
 async function getAllCategories(req, res) {
   const sortingAndPagination = getPaginationAndSorting(req.query);
   try {
-    const categories = await getCategories(sortingAndPagination);
+    const categories = await getCategories(null, sortingAndPagination);
     res.status(200).json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
