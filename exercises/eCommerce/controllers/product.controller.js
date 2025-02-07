@@ -40,7 +40,7 @@ async function addNewProduct(req, res) {
     if (isProductAdded) {
       const newProduct = await getProductsFromDB(isProductAdded.id);
       res
-        .status(200)
+        .status(201)
         .json({ message: "Product Added Successfully", data: newProduct });
     }
   } catch (err) {

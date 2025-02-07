@@ -10,11 +10,12 @@ async function placeOrder(req, res) {
   try {
     const user_id = req.userId;
     const isOrderCreated = await createOrder(user_id);
+    console.log(isOrderCreated);
     if (isOrderCreated) {
       await deleteCartFromDB(user_id);
-      isOrderCreated.orderItems.forEach(async (orderItem) => {
-        await reduceQuantityFromDB(orderItem.product_id, orderItem.quantity);
-      });
+      // isOrderCreated.orderItems.forEach(async (orderItem) => {
+      //   await reduceQuantityFromDB(orderItem.product_id, orderItem.quantity);
+      // });
       return res
         .status(200)
         .json({ message: "Order Placed Successful", data: isOrderCreated });

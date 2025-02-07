@@ -17,10 +17,13 @@ async function addNewCategory(name) {
 
 /**
  * @description - Get All Categories
+ * @param {string} id - Optional, if not passed will return all categories
+ * @param {object} sortingAndPagination - Sorting and Pagination Object
  **/
-async function getCategories(sortingAndPagination) {
+async function getCategories(id = null, sortingAndPagination = {}) {
   try {
     return await Category.findAll({
+      ...(id && { where: { id } }),
       ...sortingAndPagination,
     });
   } catch (err) {

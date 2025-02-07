@@ -96,7 +96,7 @@ async function reduceQuantityFromDB(product_id, quantity) {
   const product = await Product.findOne({ where: { id: product_id } });
 
   if (product.stock - quantity === 0) {
-    return await Product.destroy({ id: product_id });
+    return await Product.destroy({ where: { id: product_id } });
   }
 
   product.stock -= quantity;

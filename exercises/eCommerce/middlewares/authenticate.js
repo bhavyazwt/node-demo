@@ -15,7 +15,6 @@ const authenticate = (roles) => {
       const accessToken = accessTokenParts[1];
 
       const decoded = jwt.verify(accessToken, ACCESS_TOKEN.secret);
-      console.log(decoded);
       if (roles?.includes(decoded.role)) {
         req.userId = decoded.id;
         req.token = accessToken;

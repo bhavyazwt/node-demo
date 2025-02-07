@@ -31,11 +31,16 @@ async function createOrder(user_id) {
   });
   const order_id = orderDetails.id;
 
-  // Adding Order Items for the OrderID generated above.
-  orderItems.forEach((item) => {
-    addOrderItemsToDB(order_id, item);
+  const orderItemsWithOrderID = orderItems.map((item) => {
+    return { order_id, ...item };
   });
-  return { order_id, orderItems };
+
+  await OrderItem.bulkCreate(orderItemsWithOrderID);
+
+  return OrderItem.findAll({
+    where: { order_id },
+    include: [{ model: Product }],
+  });
 }
 
 /**
