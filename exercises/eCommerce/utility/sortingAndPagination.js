@@ -3,8 +3,6 @@ function getPaginationAndSorting(query) {
   const page = query.page ? Number(query.page) : 1;
   const sort = query.sort ?? null;
   const sortType = query.sortType ?? "ASC";
-  console.log(page, "hereeee");
-  console.log(limit, "hereeee");
 
   return {
     ...(limit && { limit }),
