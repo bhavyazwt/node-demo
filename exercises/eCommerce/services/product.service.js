@@ -1,5 +1,7 @@
+const { Op } = require("sequelize");
 const { Product } = require("../models");
 const fs = require("fs");
+const cloudinary = require("cloudinary").v2;
 
 /**
  * @description - Add New Product In DB
@@ -75,16 +77,15 @@ async function deleteProductFromDB(id) {
 
 /**
  * @description - Deletes Image From Local Directory
- * @param {string} path - Path To Image
+ * @param {string} publicId - Cloudinary Public Id
  **/
-async function deleteImageFromStorage(path) {
-  fs.unlink(path, (err) => {
-    if (err && err.code == "ENOENT") {
-      throw new Error("File already deleted.");
-    } else if (err) {
-      throw new Error("Something Went Wrong Updating the Product");
-    }
-  });
+async function deleteImageFromStorage(publicId) {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (error) {
+    console.log(error);
+    throw new Error("Something went wrong deleting the image from Cloudinary.");
+  }
 }
 
 /**
@@ -103,6 +104,33 @@ async function reduceQuantityFromDB(product_id, quantity) {
   await product.save();
 }
 
+async function getProductByCategoriesFromDB(id, sortingAndPagination) {
+  try {
+    return await Product.findAndCountAll({
+      where: { category_id: id },
+      ...sortingAndPagination,
+    });
+  } catch (err) {
+    throw new Error(`Error finding categories: ${err.message}`);
+  }
+}
+
+async function searchProductByName(name, sortingAndPagination = {}) {
+  try {
+    return Product.findAll({
+      where: {
+        name: {
+          [Op.like]: `%${name}%`,
+        },
+      },
+      attributes: ["name", "id"],
+      ...sortingAndPagination,
+    });
+  } catch (err) {
+    throw new Error(`Error getting products: ${err.message}`);
+  }
+}
+
 module.exports = {
   addProduct,
   getProductsFromDB,
@@ -110,4 +138,6 @@ module.exports = {
   deleteProductFromDB,
   deleteImageFromStorage,
   reduceQuantityFromDB,
+  getProductByCategoriesFromDB,
+  searchProductByName,
 };

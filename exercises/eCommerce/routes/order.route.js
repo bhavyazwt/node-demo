@@ -27,4 +27,10 @@ orderRouter.put(
   orderController.updateOrderDetails
 );
 
+orderRouter.get(
+  "/order/allOrders",
+  authenticate(["admin"]),
+  orderController.getAllOrders
+);
+
 module.exports = orderRouter;

@@ -39,7 +39,17 @@ async function createOrder(user_id) {
 
   return OrderItem.findAll({
     where: { order_id },
-    include: [{ model: Product }],
+    attributes: ["id", "order_id", "product_id", "quantity", "price"],
+    include: [
+      {
+        model: Product,
+        attributes: ["name", "description", "image_url"],
+      },
+      {
+        model: Order,
+        attributes: ["total_price"],
+      },
+    ],
   });
 }
 
@@ -60,15 +70,31 @@ async function addOrderItemsToDB(order_id, orderItem) {
  * @description Get Order of User from DB.
  * @param {number} user_id - user's id [ Decoded from JWT ]
  * @param {object} order_id  - order's id
+ *
  **/
-async function getOrdersFromDB(user_id, order_id = null) {
+const getOrdersFromDB = async (user_id, order_id = null) => {
   const filters = {
     ...(user_id && { user_id }),
     ...(order_id && { id: order_id }),
   };
-  return await Order.findAll({ where: filters });
-}
 
+  return await Order.findAll({
+    where: filters,
+    attributes: ["id", "total_price", "status", "createdAt"],
+    include: [
+      {
+        model: OrderItem,
+        attributes: ["quantity", "price"],
+        include: [
+          {
+            model: Product,
+            attributes: ["name", "image_url"],
+          },
+        ],
+      },
+    ],
+  });
+};
 /**
  * @description Update Order in DB
  * @param {number} order_id - order's id
@@ -78,4 +104,29 @@ async function updateOrderInDB(order_id, status) {
   return Order.update({ status }, { where: { id: order_id } });
 }
 
-module.exports = { createOrder, getOrdersFromDB, updateOrderInDB };
+const getAllOrdersFromDB = async (sortingAndPagination) => {
+  return await Order.findAndCountAll({
+    attributes: ["id", "total_price", "status", "createdAt"],
+    include: [
+      {
+        model: OrderItem,
+        attributes: ["quantity", "price"],
+        include: [
+          {
+            model: Product,
+            attributes: ["name", "image_url"],
+          },
+        ],
+      },
+    ],
+    distinct: true,
+    ...sortingAndPagination,
+  });
+};
+
+module.exports = {
+  createOrder,
+  getOrdersFromDB,
+  updateOrderInDB,
+  getAllOrdersFromDB,
+};

@@ -33,6 +33,24 @@ async function addProductToCartDB(user_id, product_id, quantity = 1) {
   }
 }
 
+async function changeQuantityProduct(cart_id, type) {
+  try {
+    const cart = await Cart.findOne({ where: { id: cart_id } });
+    if (type === "increase") {
+      cart.quantity += 1;
+    } else if (type === "decrease") {
+      if (cart.quantity === 1) {
+        return deleteProductFromCartDB(cart_id);
+      }
+      cart.quantity -= 1;
+    }
+
+    return cart.save();
+  } catch (err) {
+    throw new Error(`Something Went Wrong ${err.message}`);
+  }
+}
+
 /**
  * @description Get's Product in Cart of a user using user_id.
  * @param {number} user_id - user's id [Decoded From JWT]
@@ -53,10 +71,11 @@ async function getProductInCartDB(user_id) {
  * @param {number} user_id - user's id [Decoded From JWT]
  * @param {number} product_id -product id to delete from cart
  **/
-async function deleteProductFromCartDB(product_id, user_id) {
+async function deleteProductFromCartDB(id) {
   try {
-    return Cart.destroy({ where: { product_id, user_id } });
+    return Cart.destroy({ where: { id } });
   } catch (err) {
+    console.log(err);
     throw new Error(`Something Went Wrong ${err.message}`);
   }
 }
@@ -78,4 +97,5 @@ module.exports = {
   getProductInCartDB,
   deleteProductFromCartDB,
   deleteCartFromDB,
+  changeQuantityProduct,
 };

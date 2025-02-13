@@ -9,7 +9,6 @@ const { User } = require("../models");
  * @param {string} role  - user's role either 'Customer' or 'Admin' [Default: Customer]
  *
  **/
-
 async function signUpUserService(
   first_name,
   last_name,
@@ -39,7 +38,6 @@ async function signUpUserService(
     throw new Error(err);
   }
 }
-
 /**
  *
  * @param {string} email - user's email

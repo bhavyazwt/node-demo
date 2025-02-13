@@ -1,6 +1,7 @@
 const {
   addNewCategory,
   getCategories,
+  getCategoriesByNameFromDB,
 } = require("../services/category.service");
 
 const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
@@ -10,8 +11,8 @@ const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
  **/
 async function createCategory(req, res) {
   try {
-    const { name } = req?.body;
-    const isCategoryAdded = await addNewCategory(name);
+    const { name, imageUrl } = req?.body;
+    const isCategoryAdded = await addNewCategory(name, imageUrl);
     if (isCategoryAdded) {
       res.status(201).json({
         message: "Category Added Successufully",

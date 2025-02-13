@@ -3,8 +3,10 @@ const {
   createOrder,
   getOrdersFromDB,
   updateOrderInDB,
+  getAllOrdersFromDB,
 } = require("../services/order.service");
 const { reduceQuantityFromDB } = require("../services/product.service");
+const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
 
 async function placeOrder(req, res) {
   try {
@@ -65,4 +67,26 @@ async function updateOrderDetails(req, res) {
   }
 }
 
-module.exports = { placeOrder, getOrderDetails, updateOrderDetails };
+async function getAllOrders(req, res) {
+  console.log(req.query);
+  const sortingAndPagination = getPaginationAndSorting(req.query);
+  try {
+    console.log(sortingAndPagination);
+    const orders = await getAllOrdersFromDB(sortingAndPagination);
+    return res.status(200).json({
+      message: orders.rows.length ? "Orders Found" : "No Orders Found",
+      data: orders,
+    });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: `Something Went Wrong ${err.message}` });
+  }
+}
+
+module.exports = {
+  placeOrder,
+  getOrderDetails,
+  updateOrderDetails,
+  getAllOrders,
+};

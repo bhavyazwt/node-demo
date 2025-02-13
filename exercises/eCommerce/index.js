@@ -2,9 +2,16 @@ require("dotenv").config();
 const loggerMiddleWare = require("./middlewares/logger");
 const express = require("express");
 const app = express();
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { sequelize } = require("./models");
 
+const corsOptions = {
+  origin: "http://localhost:5173",
+  methods: "GET,POST,PUT,PATCH,DELETE",
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
 const PORT = process.env.PORT || 5000;
 
 const authRoutes = require("./routes/auth.route");
@@ -30,6 +37,8 @@ app.use("/api/order", orderRoutes);
 app.get("/status", (req, res) => {
   res.send("API RUNNING!");
 });
+
+app.use(cors());
 
 app.listen(PORT, async () => {
   await sequelize.sync();

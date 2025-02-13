@@ -2,6 +2,7 @@ const {
   addProductToCartDB,
   getProductInCartDB,
   deleteProductFromCartDB,
+  changeQuantityProduct,
 } = require("../services/cart.service");
 const { getProductsFromDB } = require("../services/product.service");
 
@@ -39,8 +40,12 @@ async function addProductToCart(req, res) {
 async function getProductsInCart(req, res) {
   try {
     const user_id = req.userId;
-    const products = await getProductInCartDB(user_id);
+    let products = await getProductInCartDB(user_id);
     if (products) {
+      const total_price = products.reduce((sum, item) => {
+        return sum + item.quantity * parseFloat(item.Product.price);
+      }, 0);
+      products = { total_price, products };
       return res.status(200).json({
         message: products.length ? "Cart Found!" : "No Products in Cart!",
         data: products,
@@ -58,9 +63,10 @@ async function getProductsInCart(req, res) {
 // Delete Product From Cart
 async function deleteProductFromCart(req, res) {
   try {
-    const user_id = req.userId;
-    const productId = req.params.id;
-    const isDeleted = await deleteProductFromCartDB(productId, user_id);
+    const cartId = req.params.id;
+
+    const isDeleted = await deleteProductFromCartDB(cartId);
+    console.log(isDeleted, "ISSSSSSSSSSSSSSSSSSSS");
     if (isDeleted) {
       return res
         .status(200)
@@ -69,10 +75,33 @@ async function deleteProductFromCart(req, res) {
       throw new Error("Product Doesn't exists in cart!");
     }
   } catch (err) {
+    console.log(err);
     return res.status(500).json({
       error: `Something Went Wrong, ${err.message}`,
     });
   }
 }
 
-module.exports = { addProductToCart, getProductsInCart, deleteProductFromCart };
+async function changeProductQty(req, res) {
+  try {
+    const cartId = req.body.id;
+    const type = req.body.type;
+    const isChanged = await changeQuantityProduct(cartId, type);
+    if (isChanged) {
+      return res.status(200).json({ message: "Product Quantity Updated!" });
+    } else {
+      throw new Error("Error Changing Product Quantity");
+    }
+  } catch (err) {
+    res.status(500).json({
+      error: `Something Went Wrong, ${err.message}`,
+    });
+  }
+}
+
+module.exports = {
+  addProductToCart,
+  getProductsInCart,
+  deleteProductFromCart,
+  changeProductQty,
+};

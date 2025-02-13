@@ -4,6 +4,8 @@ const {
   updateProduct,
   deleteProductFromDB,
   deleteImageFromStorage,
+  getProductByCategoriesFromDB,
+  searchProductByName,
 } = require("../services/product.service");
 const path = require("path");
 const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
@@ -12,17 +14,17 @@ const { getCategories } = require("../services/category.service");
 async function addNewProduct(req, res) {
   let imgPath;
   try {
-    const { name, description, price, stock, category_id, fileName } =
+    const { name, description, price, stock, category_id, imageUrl } =
       req?.body;
-
-    if (fileName) {
-      //Storing Path To Delete In Case of Error
-      imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
-    }
-
+    imgPath = imageUrl;
     const category = await getCategories(category_id);
+    console.log(category);
     if (!category.length) {
-      if (imgPath) deleteImageFromStorage(imgPath);
+      if (imageUrl) {
+        const publicId = extractPath(imgPath);
+        deleteImageFromStorage(publicId);
+        console.log(publicId);
+      }
       return res
         .status(404)
         .json({ error: "Category Doesn't exists! Add a valid category" });
@@ -34,7 +36,7 @@ async function addNewProduct(req, res) {
       price,
       stock,
       category_id,
-      imgPath
+      imageUrl
     );
 
     if (isProductAdded) {
@@ -44,7 +46,11 @@ async function addNewProduct(req, res) {
         .json({ message: "Product Added Successfully", data: newProduct });
     }
   } catch (err) {
-    if (imgPath) deleteImageFromStorage(imgPath);
+    if (imgPath) {
+      console.log(err);
+      const publicId = extractPath(imgPath);
+      deleteImageFromStorage(publicId);
+    }
     return res.status(500).json({ error: err });
   }
 }
@@ -84,11 +90,15 @@ async function getProductsById(req, res) {
   }
 }
 
+function extractPath(url) {
+  const match = url.match(/\/(uploads\/image-[^/.]+)/);
+  return match ? match[1] : null;
+}
 //Update Product
 async function updateProducts(req, res) {
   try {
     const id = req.params.id;
-    const { name, description, price, stock, category_id, fileName } =
+    const { name, description, price, stock, category_id, imageUrl } =
       req?.body;
 
     const category = await getCategories(category_id);
@@ -97,12 +107,11 @@ async function updateProducts(req, res) {
         .status(404)
         .json({ error: "Category Doesn't exists! Add a valid category" });
     }
-    let imgPath, oldImgPath;
+    let oldImgPath;
 
-    if (fileName) {
+    if (imageUrl) {
       const oldProduct = await getProductsFromDB(id);
       oldImgPath = oldProduct.image_url;
-      imgPath = path.join(__dirname, "../tmp/uploads/img", fileName);
     }
     const updatedProduct = {
       ...(name && { name }),
@@ -110,13 +119,14 @@ async function updateProducts(req, res) {
       ...(price && { price }),
       ...(stock && { stock }),
       ...(category_id && { category_id }),
-      ...(fileName && { image_url: imgPath }),
+      ...(imageUrl && { image_url: imageUrl }),
     };
 
     const isUpdated = await updateProduct(id, updatedProduct);
     if (isUpdated) {
       if (oldImgPath) {
-        deleteImageFromStorage(oldImgPath);
+        const publicId = extractPath(oldImgPath);
+        deleteImageFromStorage(publicId);
       }
       const product = await getProductsFromDB(id);
       return res
@@ -134,14 +144,14 @@ async function updateProducts(req, res) {
 async function deleteProduct(req, res) {
   try {
     const id = req.params.id;
-    let imgPath;
-    const product = getProductsFromDB(id);
-    if (product.image_url) {
-      imgPath = product.image_url;
-    }
+    const product = await getProductsFromDB(id);
+    console.log(product);
     const isDeleted = await deleteProductFromDB(id);
     if (isDeleted) {
-      if (imgPath) deleteImageFromStorage(imgPath);
+      {
+        const publicId = extractPath(product[0].image_url);
+        deleteImageFromStorage(publicId);
+      }
       res.status(200).json({ message: "Product Deleted Successfully" });
     } else {
       throw new Error("Product Doesn't exist");
@@ -151,10 +161,38 @@ async function deleteProduct(req, res) {
   }
 }
 
+async function getProductByCategories(req, res) {
+  const name = req?.params.name;
+  const sortingAndPagination = getPaginationAndSorting(req.query);
+  try {
+    const categories = await getProductByCategoriesFromDB(
+      name,
+      sortingAndPagination
+    );
+    res.status(200).json(categories);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+async function searchProduct(req, res) {
+  const name = req?.query.search;
+  console.log("name", name);
+  const sortingAndPagination = getPaginationAndSorting(req.query);
+  try {
+    const products = await searchProductByName(name, sortingAndPagination);
+    res.status(200).json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   addNewProduct,
   getProducts,
   getProductsById,
   updateProducts,
   deleteProduct,
+  getProductByCategories,
+  searchProduct,
 };

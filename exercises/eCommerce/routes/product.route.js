@@ -30,7 +30,13 @@ productRouter.get(
 
 //Get Product Details
 productRouter.get("/:id", productController.getProductsById);
+productRouter.get("/", productController.getProductsById);
+productRouter.get("/product/search", productController.searchProduct);
 
+productRouter.get(
+  "/categories/:name",
+  productController.getProductByCategories
+);
 //PATCH Routes
 
 //Update A Product

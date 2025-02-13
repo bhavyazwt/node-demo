@@ -3,10 +3,12 @@ const { Category } = require("../models");
 /**
  * @description - Create New Category
  * @param {string} name - new category name (Unique)
+ * @param {string} image_url - new category image url (Unique)
+ *
  **/
-async function addNewCategory(name) {
+async function addNewCategory(name, image_url) {
   try {
-    return await Category.create({ name });
+    return await Category.create({ name, image_url });
   } catch (err) {
     if (err?.name === "SequelizeUniqueConstraintError") {
       throw new Error(`Category Already Exists!`);

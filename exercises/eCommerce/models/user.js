@@ -50,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
       const accessToken = jwt.sign(
         {
           id: user.id.toString(),
+          first_name: user.first_name,
           email: user.email,
           role: user.role,
         },

@@ -5,6 +5,7 @@ const categoryController = require("../controllers/category.controller");
 const { validate } = require("../validator/validator");
 const addCategorySchema = require("../schemas/addCategorySchema");
 const getCategorySchema = require("../schemas/getCategorySchema");
+const { fileUpload } = require("../utility/imageUpload");
 
 //POST Routes
 
@@ -12,7 +13,9 @@ const getCategorySchema = require("../schemas/getCategorySchema");
 categoryRouter.post(
   "/",
   authenticate(["admin"]),
+  fileUpload,
   validate(addCategorySchema),
+
   categoryController.createCategory
 );
 

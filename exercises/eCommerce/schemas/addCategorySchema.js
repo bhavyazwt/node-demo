@@ -6,6 +6,7 @@ const addCategorySchema = yup.object({
       .string()
       .required("A Valid Category Is Required")
       .typeError("Invalid Type: Category Must Be A String"),
+    image: yup.mixed(),
   }),
 });
 

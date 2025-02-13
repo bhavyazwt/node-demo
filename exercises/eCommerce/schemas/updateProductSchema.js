@@ -9,7 +9,7 @@ const updateProductSchema = yup.object({
     category_id: yup
       .string()
       .typeError("Invalid Type: Password Must Be A String"),
-    productImage: yup.mixed(),
+    image: yup.mixed(),
   }),
 });
 

@@ -1,8 +1,10 @@
 function getPaginationAndSorting(query) {
-  const limit = Number(query.limit) ?? null;
-  const page = Number(query.page) ?? null;
+  const limit = query.limit ? Number(query.limit) : 10;
+  const page = query.page ? Number(query.page) : 1;
   const sort = query.sort ?? null;
   const sortType = query.sortType ?? "ASC";
+  console.log(page, "hereeee");
+  console.log(limit, "hereeee");
 
   return {
     ...(limit && { limit }),

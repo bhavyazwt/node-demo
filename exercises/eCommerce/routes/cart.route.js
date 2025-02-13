@@ -13,6 +13,12 @@ cartRouter.post(
   cartController.addProductToCart
 );
 
+cartRouter.post(
+  "/updateQuantity",
+  authenticate(["customer"]),
+  cartController.changeProductQty
+);
+
 //Get Cart Details [Only CUSTOMERS]
 cartRouter.get(
   "/",
