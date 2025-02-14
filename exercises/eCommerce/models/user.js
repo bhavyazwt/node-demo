@@ -1,4 +1,6 @@
-"use strict";
+require("dotenv").config();
+("use strict");
+
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -10,6 +12,7 @@ const REFRESH_TOKEN = {
   secret: process.env.AUTH_REFRESH_TOKEN_SECRET,
   expiry: process.env.AUTH_REFRESH_TOKEN_EXPIRY,
 };
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -23,11 +26,13 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     validPassword = async function (password) {
-      return bcrypt.compare(password, this.password);
+      const isMatch = await bcrypt.compare(password, this.password);
+      return isMatch;
     };
 
     generateRefreshToken = async function () {
       const user = this;
+
       const refreshToken = jwt.sign(
         {
           id: user.id.toString(),
@@ -96,10 +101,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
   User.beforeUpdate(async (user) => {
-    if (user.password) {
+    if (user.changed("password")) {
       user.password = await bcrypt.hash(user.password, 10);
     }
   });
-
   return User;
 };
