@@ -51,7 +51,7 @@ async function loginService(email, password) {
   if (!user) throw new Error("User is not registered!");
 
   //Check for valid password
-  const isPassValid = user.validPassword(password);
+  const isPassValid = await user.validPassword(password);
   if (!isPassValid) throw new Error("Invalid Email/Password.");
 
   //Generate Tokens if user exists

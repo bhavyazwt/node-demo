@@ -18,12 +18,10 @@ async function addNewProduct(req, res) {
       req?.body;
     imgPath = imageUrl;
     const category = await getCategories(category_id);
-    console.log(category);
     if (!category.length) {
       if (imageUrl) {
         const publicId = extractPath(imgPath);
         deleteImageFromStorage(publicId);
-        console.log(publicId);
       }
       return res
         .status(404)
@@ -63,7 +61,7 @@ async function getProducts(req, res) {
 
     if (products) {
       return res.status(200).json({
-        message: products?.length
+        message: products?.rows?.length
           ? "Product Found Successfully"
           : "No Products Found",
         data: products,
@@ -145,7 +143,6 @@ async function deleteProduct(req, res) {
   try {
     const id = req.params.id;
     const product = await getProductsFromDB(id);
-    console.log(product);
     const isDeleted = await deleteProductFromDB(id);
     if (isDeleted) {
       {
@@ -177,7 +174,6 @@ async function getProductByCategories(req, res) {
 
 async function searchProduct(req, res) {
   const name = req?.query.search;
-  console.log("name", name);
   const sortingAndPagination = getPaginationAndSorting(req.query);
   try {
     const products = await searchProductByName(name, sortingAndPagination);

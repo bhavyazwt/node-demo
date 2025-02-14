@@ -12,7 +12,6 @@ async function placeOrder(req, res) {
   try {
     const user_id = req.userId;
     const isOrderCreated = await createOrder(user_id);
-    console.log(isOrderCreated);
     if (isOrderCreated) {
       await deleteCartFromDB(user_id);
       // isOrderCreated.orderItems.forEach(async (orderItem) => {
@@ -68,10 +67,8 @@ async function updateOrderDetails(req, res) {
 }
 
 async function getAllOrders(req, res) {
-  console.log(req.query);
   const sortingAndPagination = getPaginationAndSorting(req.query);
   try {
-    console.log(sortingAndPagination);
     const orders = await getAllOrdersFromDB(sortingAndPagination);
     return res.status(200).json({
       message: orders.rows.length ? "Orders Found" : "No Orders Found",

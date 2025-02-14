@@ -41,7 +41,7 @@ async function addProduct(
  **/
 async function getProductsFromDB(id, sortingAndPagination = {}) {
   try {
-    return Product.findAll({
+    return Product.findAndCountAll({
       ...(id && { where: { id } }),
       ...sortingAndPagination,
     });

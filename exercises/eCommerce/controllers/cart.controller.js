@@ -66,7 +66,6 @@ async function deleteProductFromCart(req, res) {
     const cartId = req.params.id;
 
     const isDeleted = await deleteProductFromCartDB(cartId);
-    console.log(isDeleted, "ISSSSSSSSSSSSSSSSSSSS");
     if (isDeleted) {
       return res
         .status(200)

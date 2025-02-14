@@ -19,7 +19,6 @@ const addProductSchema = yup.object({
       .string()
       .required("A Valid Category ID Is Required")
       .typeError("Invalid Type: Category Must Be A String"),
-    image: yup.mixed(),
   }),
 });
 
