@@ -3,8 +3,12 @@ const {
   getProductInCartDB,
   deleteProductFromCartDB,
   changeQuantityProduct,
+  getAllCarts,
 } = require("../services/cart.service");
 const { getProductsFromDB } = require("../services/product.service");
+const cron = require("node-cron");
+const { sendEmail } = require("../utility/nodeMailer");
+require("dotenv").config();
 
 // Add's Product To Cart
 async function addProductToCart(req, res) {
@@ -13,7 +17,7 @@ async function addProductToCart(req, res) {
 
     // Validating If Product Exists Or Not.
     const product = await getProductsFromDB(productId);
-    if (!product.length) {
+    if (!product.rows.length) {
       return res
         .status(500)
         .json({ error: "Product Doesn't exists! Add a valid Product" });
@@ -98,9 +102,110 @@ async function changeProductQty(req, res) {
   }
 }
 
+async function rejectPromiseDummy() {
+  try {
+    throw new Error();
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+function forgotItemsInCartMailCreator(email, userName, productName) {
+  return {
+    from: process.env.ADMIN_EMAIL,
+    to: email,
+    subject: `Hi ${userName} You Forgot Something in Your cart!`,
+    text: `You forgot ${productName} in your cart!`,
+  };
+}
+
+function mailPromiseMaker(carts) {
+  return carts.map(async (cart, index) => {
+    if (index === 1) {
+      await rejectPromiseDummy();
+      return;
+    } else {
+      const email = cart["User"].email;
+      const firstName = cart["User"].first_name;
+      const productName = cart["Product"].name;
+      const emailBody = forgotItemsInCartMailCreator(
+        email,
+        firstName,
+        productName
+      );
+      await sendEmail(emailBody);
+    }
+  });
+}
+
+function retryPromises(carts, rejectedPromisesIndexes, tries) {
+  //Check for max tries
+  console.log(tries);
+  console.log(rejectedPromisesIndexes);
+  if (!rejectedPromisesIndexes.length || tries === 0) return;
+
+  // If tries are left retry sending mail
+  // Get All Promises Of Rejected Mails
+  const promisesToRetry = rejectedPromisesIndexes.map(async (index) => {
+    const userEmail = carts[index]["User"].email;
+    const userFirstName = carts[index]["User"].first_name;
+    const productName = carts[index]["Product"].name;
+    const emailBody = forgotItemsInCartMailCreator(
+      userEmail,
+      userFirstName,
+      productName
+    );
+    await sendEmail(emailBody);
+  });
+
+  // const retryPromises = retryPromisesMaker(carts, rejectedPromiseIndexes);
+  Promise.allSettled(promisesToRetry).then((values) => {
+    rejectedPromisesIndexes = [];
+
+    // Check again which promises got rejected
+    values.forEach((value, index) => {
+      if (value.status === "rejected") rejectedPromisesIndexes.push(index);
+    });
+
+    //Retry Again
+    retryPromises(carts, rejectedPromisesIndexes, --tries);
+  });
+}
+
+async function checkCartAndSendMails(req, res) {
+  try {
+    let rejectedPromisesIndexes = [];
+
+    //Get All Carts
+    const carts = await getAllCarts();
+
+    //Get Promises of All Mail To Send
+    const mailPromises = mailPromiseMaker(carts);
+
+    //Try to resolve all promises
+    Promise.allSettled(mailPromises).then((values) => {
+      // Find Rejected Promises
+      values.forEach((value, index) => {
+        if (value.status === "rejected") rejectedPromisesIndexes.push(index);
+      });
+
+      //Retry Rejected Promises
+      retryPromises(carts, rejectedPromisesIndexes, 3);
+    });
+
+    res.status(200).json(carts);
+  } catch (err) {
+    res.status(500).json({ error: "Something Went Wrong" });
+  }
+}
+
+// cron.schedule("5 * * * *",);
+
 module.exports = {
   addProductToCart,
   getProductsInCart,
   deleteProductFromCart,
   changeProductQty,
+  // cronSchedulerForCart,
+  checkCartAndSendMails,
 };

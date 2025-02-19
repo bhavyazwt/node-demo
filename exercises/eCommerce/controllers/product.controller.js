@@ -39,9 +39,10 @@ async function addNewProduct(req, res) {
 
     if (isProductAdded) {
       const newProduct = await getProductsFromDB(isProductAdded.id);
-      res
-        .status(201)
-        .json({ message: "Product Added Successfully", data: newProduct });
+      res.status(201).json({
+        message: "Product Added Successfully",
+        data: newProduct.rows[0],
+      });
     }
   } catch (err) {
     if (imgPath) {
@@ -108,8 +109,10 @@ async function updateProducts(req, res) {
     let oldImgPath;
 
     if (imageUrl) {
+      console.log("i am here");
       const oldProduct = await getProductsFromDB(id);
-      oldImgPath = oldProduct.image_url;
+      console.log(oldProduct);
+      oldImgPath = oldProduct.rows[0].image_url;
     }
     const updatedProduct = {
       ...(name && { name }),
@@ -124,7 +127,7 @@ async function updateProducts(req, res) {
     if (isUpdated) {
       if (oldImgPath) {
         const publicId = extractPath(oldImgPath);
-        deleteImageFromStorage(publicId);
+        await deleteImageFromStorage(publicId);
       }
       const product = await getProductsFromDB(id);
       return res
@@ -146,7 +149,8 @@ async function deleteProduct(req, res) {
     const isDeleted = await deleteProductFromDB(id);
     if (isDeleted) {
       {
-        const publicId = extractPath(product[0].image_url);
+        console.log(product);
+        const publicId = extractPath(product.rows[0].image_url);
         deleteImageFromStorage(publicId);
       }
       res.status(200).json({ message: "Product Deleted Successfully" });

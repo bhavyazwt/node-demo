@@ -6,14 +6,26 @@ const {
   getAllOrdersFromDB,
 } = require("../services/order.service");
 const { reduceQuantityFromDB } = require("../services/product.service");
+const { sendEmail } = require("../utility/nodeMailer");
+// const { sendMail } = require("../utility/mailer");
+// sendMail
 const { getPaginationAndSorting } = require("../utility/sortingAndPagination");
 
 async function placeOrder(req, res) {
   try {
     const user_id = req.userId;
+    const user_email = req.email;
     const isOrderCreated = await createOrder(user_id);
+    // console.log(isOrderCreated[0].id);
     if (isOrderCreated) {
+      await sendEmail({
+        from: process.env.ADMIN_EMAIL,
+        to: user_email,
+        subject: "Order Confirmed!",
+        text: `Order Confirmed with orderId ${isOrderCreated[0].order_id}`,
+      });
       await deleteCartFromDB(user_id);
+
       // isOrderCreated.orderItems.forEach(async (orderItem) => {
       //   await reduceQuantityFromDB(orderItem.product_id, orderItem.quantity);
       // });
@@ -81,9 +93,25 @@ async function getAllOrders(req, res) {
   }
 }
 
+async function testMail(req, res) {
+  try {
+    await sendEmail({
+      subject: "Test",
+      text: "I am sending an email from nodemailer!",
+      to: "bhavya@zealousweb.com",
+      from: process.env.OAUTH_EMAIL,
+    });
+    res.status(200).json({ message: "" });
+    console.log(mail);
+  } catch (err) {
+    res.status(500).json({ error: err });
+  }
+}
+
 module.exports = {
   placeOrder,
   getOrderDetails,
   updateOrderDetails,
   getAllOrders,
+  testMail,
 };

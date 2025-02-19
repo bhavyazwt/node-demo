@@ -1,4 +1,4 @@
-const { Cart, Product } = require("../models");
+const { Cart, Product, User } = require("../models");
 
 /**
  * @description Add's Product To Cart While Checking the Available Stock.
@@ -37,7 +37,16 @@ async function changeQuantityProduct(cart_id, type) {
   try {
     const cart = await Cart.findOne({ where: { id: cart_id } });
     if (type === "increase") {
-      cart.quantity += 1;
+      const currQty = cart.quantity;
+      const productId = cart.product_id;
+      const product = await Product.findOne({ where: { id: productId } });
+      const availableQty = product.stock;
+
+      if (availableQty >= currQty + 1) {
+        cart.quantity += 1;
+      } else {
+        throw new Error(`Stock not available`);
+      }
     } else if (type === "decrease") {
       if (cart.quantity === 1) {
         return deleteProductFromCartDB(cart_id);
@@ -92,10 +101,31 @@ async function deleteCartFromDB(user_id) {
   }
 }
 
+async function getAllCarts() {
+  try {
+    return Cart.findAll({
+      attributes: ["product_id"],
+      include: [
+        {
+          model: Product,
+          attributes: ["name", "image_url"],
+        },
+        {
+          model: User,
+          attributes: ["first_name", "email"],
+        },
+      ],
+    });
+  } catch (err) {
+    throw new Error("Something went wrong!");
+  }
+}
+
 module.exports = {
   addProductToCartDB,
   getProductInCartDB,
   deleteProductFromCartDB,
   deleteCartFromDB,
   changeQuantityProduct,
+  getAllCarts,
 };

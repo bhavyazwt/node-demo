@@ -18,6 +18,7 @@ const authenticate = (roles) => {
       if (roles?.includes(decoded.role)) {
         req.userId = decoded.id;
         req.token = accessToken;
+        req.email = decoded.email;
         next();
       } else {
         return res

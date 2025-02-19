@@ -5,7 +5,7 @@ const app = express();
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { sequelize } = require("./models");
-
+const cron = require("node-cron");
 const corsOptions = {
   origin: "http://localhost:5173",
   methods: "GET,POST,PUT,PATCH,DELETE",
@@ -21,6 +21,7 @@ const productRoutes = require("./routes/product.route");
 const cartRoutes = require("./routes/cart.route");
 const wishlistRoutes = require("./routes/wishlist.route");
 const orderRoutes = require("./routes/order.route");
+const { checkCartAndSendMails } = require("./controllers/cart.controller");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -44,4 +45,5 @@ app.listen(PORT, async () => {
   await sequelize.sync();
   console.log("Database Connected!");
   console.log(`Server running on port ${PORT}`);
+  cron.schedule("* * * * * ", checkCartAndSendMails);
 });
